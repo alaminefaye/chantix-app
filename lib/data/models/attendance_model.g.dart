@@ -8,21 +8,29 @@ part of 'attendance_model.dart';
 
 AttendanceModel _$AttendanceModelFromJson(Map<String, dynamic> json) =>
     AttendanceModel(
-      id: (json['id'] as num).toInt(),
-      projectId: (json['project_id'] as num).toInt(),
-      employeeId: (json['employee_id'] as num).toInt(),
+      id: AttendanceModel._intFromJson(json['id']),
+      projectId: AttendanceModel._intFromJson(json['project_id']),
+      employeeId: AttendanceModel._intFromJson(json['employee_id']),
       checkInTime: json['check_in_time'] as String?,
       checkOutTime: json['check_out_time'] as String?,
-      checkInLatitude: (json['check_in_latitude'] as num?)?.toDouble(),
-      checkInLongitude: (json['check_in_longitude'] as num?)?.toDouble(),
-      checkOutLatitude: (json['check_out_latitude'] as num?)?.toDouble(),
-      checkOutLongitude: (json['check_out_longitude'] as num?)?.toDouble(),
+      checkInLatitude:
+          AttendanceModel._doubleFromJsonNullable(json['check_in_latitude']),
+      checkInLongitude:
+          AttendanceModel._doubleFromJsonNullable(json['check_in_longitude']),
+      checkOutLatitude:
+          AttendanceModel._doubleFromJsonNullable(json['check_out_latitude']),
+      checkOutLongitude:
+          AttendanceModel._doubleFromJsonNullable(json['check_out_longitude']),
       checkInPhoto: json['check_in_photo'] as String?,
       checkOutPhoto: json['check_out_photo'] as String?,
-      hoursWorked: (json['hours_worked'] as num?)?.toDouble(),
-      overtimeHours: (json['overtime_hours'] as num?)?.toDouble(),
+      hoursWorked:
+          AttendanceModel._doubleFromJsonNullable(json['hours_worked']),
+      overtimeHours:
+          AttendanceModel._doubleFromJsonNullable(json['overtime_hours']),
       notes: json['notes'] as String?,
-      isAbsence: json['is_absence'] as bool? ?? false,
+      isAbsence: json['is_absence'] == null
+          ? false
+          : AttendanceModel._boolFromJson(json['is_absence']),
       absenceReason: json['absence_reason'] as String?,
       createdAt: json['created_at'] as String?,
       updatedAt: json['updated_at'] as String?,

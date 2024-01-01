@@ -9,7 +9,7 @@ class ApiService {
   ApiService() {
     final token = StorageService.getToken();
     _token = token;
-    
+
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConfig.baseUrl,
@@ -47,18 +47,12 @@ class ApiService {
   Future<Response> login(String email, String password) async {
     return await _dio.post(
       ApiConfig.login,
-      data: {
-        'email': email,
-        'password': password,
-      },
+      data: {'email': email, 'password': password},
     );
   }
 
   Future<Response> register(Map<String, dynamic> data) async {
-    return await _dio.post(
-      ApiConfig.register,
-      data: data,
-    );
+    return await _dio.post(ApiConfig.register, data: data);
   }
 
   Future<Response> logout() async {
@@ -69,7 +63,10 @@ class ApiService {
     return await _dio.get(ApiConfig.user);
   }
 
-  Future<Response> changePassword(String currentPassword, String newPassword) async {
+  Future<Response> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
     return await _dio.post(
       ApiConfig.changePassword,
       data: {
@@ -85,7 +82,10 @@ class ApiService {
   }
 
   // Méthode générique pour les requêtes GET
-  Future<Response> get(String endpoint, {Map<String, dynamic>? queryParameters}) async {
+  Future<Response> get(
+    String endpoint, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
     return await _dio.get(endpoint, queryParameters: queryParameters);
   }
 
@@ -109,15 +109,33 @@ class ApiService {
 
   // Méthode pour les requêtes POST avec FormData (upload de fichiers)
   Future<Response> postFormData(String endpoint, FormData formData) async {
-    return await _dio.post(
-      endpoint,
-      data: formData,
-      options: Options(
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      ),
-    );
+    final fullUrl = '${ApiConfig.baseUrl}$endpoint';
+    print('🔵 DEBUG: Full URL: $fullUrl');
+    print('🔵 DEBUG: Base URL: ${ApiConfig.baseUrl}');
+    print('🔵 DEBUG: Endpoint: $endpoint');
+
+    try {
+      final response = await _dio.post(
+        endpoint,
+        data: formData,
+        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+      );
+      print('🟢 DEBUG: Response status: ${response.statusCode}');
+      return response;
+    } catch (e) {
+      print('🔴 DEBUG: Error in postFormData: $e');
+      if (e is DioException) {
+        print('🔴 DEBUG: DioException details:');
+        print('  - Type: ${e.type}');
+        print('  - Message: ${e.message}');
+        print(
+          '  - Response: ${e.response?.statusCode} - ${e.response?.statusMessage}',
+        );
+        print('  - Request path: ${e.requestOptions.path}');
+        print('  - Request baseUrl: ${e.requestOptions.baseUrl}');
+      }
+      rethrow;
+    }
   }
 
   // Méthode pour les requêtes PUT avec FormData (upload de fichiers)
@@ -125,15 +143,10 @@ class ApiService {
     return await _dio.put(
       endpoint,
       data: formData,
-      options: Options(
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      ),
+      options: Options(headers: {'Content-Type': 'multipart/form-data'}),
     );
   }
 
   // Getter pour accéder à Dio si nécessaire
   Dio get dio => _dio;
 }
-
