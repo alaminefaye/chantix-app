@@ -134,10 +134,32 @@ class _CreateMaterialScreenState extends State<CreateMaterialScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(widget.material == null
-            ? 'Nouveau matériau'
-            : 'Modifier le matériau'),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFB41839), // Rouge
+                Color(0xFF3F1B3D), // Violet foncé
+              ],
+            ),
+          ),
+        ),
+        title: Text(
+          widget.material == null
+              ? 'Nouveau matériau'
+              : 'Modifier le matériau',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -146,12 +168,11 @@ class _CreateMaterialScreenState extends State<CreateMaterialScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
+              _FormField3D(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nom *',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Nom *',
+                icon: Icons.label,
+                textInputAction: TextInputAction.next,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Le nom est requis';
@@ -159,30 +180,26 @@ class _CreateMaterialScreenState extends State<CreateMaterialScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              const SizedBox(height: 12),
+              _FormField3D(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Description',
+                icon: Icons.description,
                 maxLines: 3,
+                textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              const SizedBox(height: 12),
+              _FormField3D(
                 controller: _categoryController,
-                decoration: const InputDecoration(
-                  labelText: 'Catégorie',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Catégorie',
+                icon: Icons.category,
+                textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
+              const SizedBox(height: 12),
+              _DropdownField3D(
                 value: _unitController.text.isEmpty ? null : _unitController.text,
-                decoration: const InputDecoration(
-                  labelText: 'Unité',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Unité',
+                icon: Icons.straighten,
                 items: _units.map((unit) {
                   return DropdownMenuItem(
                     value: unit,
@@ -191,57 +208,54 @@ class _CreateMaterialScreenState extends State<CreateMaterialScreen> {
                 }).toList(),
                 onChanged: (value) {
                   if (value != null) {
-                    _unitController.text = value;
+                    setState(() {
+                      _unitController.text = value;
+                    });
                   }
                 },
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              const SizedBox(height: 12),
+              _FormField3D(
                 controller: _unitPriceController,
-                decoration: const InputDecoration(
-                  labelText: 'Prix unitaire (FCFA)',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Prix unitaire (FCFA)',
+                icon: Icons.currency_exchange,
                 keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              const SizedBox(height: 12),
+              _FormField3D(
                 controller: _supplierController,
-                decoration: const InputDecoration(
-                  labelText: 'Fournisseur',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Fournisseur',
+                icon: Icons.business,
+                textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              const SizedBox(height: 12),
+              _FormField3D(
                 controller: _referenceController,
-                decoration: const InputDecoration(
-                  labelText: 'Référence',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Référence',
+                icon: Icons.qr_code,
+                textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              const SizedBox(height: 12),
+              _FormField3D(
                 controller: _stockQuantityController,
-                decoration: const InputDecoration(
-                  labelText: 'Stock actuel',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Stock actuel',
+                icon: Icons.inventory,
                 keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              const SizedBox(height: 12),
+              _FormField3D(
                 controller: _minStockController,
-                decoration: const InputDecoration(
-                  labelText: 'Stock minimum',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Stock minimum',
+                icon: Icons.warning,
                 keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
               ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('Actif'),
-                subtitle: const Text('Le matériau est actif'),
+              const SizedBox(height: 12),
+              _Switch3D(
+                title: 'Actif',
+                subtitle: 'Le matériau est actif',
                 value: _isActive,
                 onChanged: (value) {
                   setState(() {
@@ -250,24 +264,373 @@ class _CreateMaterialScreenState extends State<CreateMaterialScreen> {
                 },
               ),
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _submit,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: const Color(0xFFB41839),
-                  foregroundColor: Colors.white,
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFB41839),
+                      Color(0xFF3F1B3D),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFB41839).withValues(alpha: 0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  widget.material == null ? 'CRÉER' : 'MODIFIER',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                child: ElevatedButton(
+                  onPressed: _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: Text(
+                    widget.material == null ? 'CRÉER' : 'MODIFIER',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// Champ de formulaire avec design 3D amélioré
+class _FormField3D extends StatefulWidget {
+  final TextEditingController? controller;
+  final String label;
+  final TextInputType? keyboardType;
+  final int? maxLines;
+  final String? Function(String?)? validator;
+  final IconData icon;
+  final TextInputAction? textInputAction;
+
+  const _FormField3D({
+    this.controller,
+    required this.label,
+    this.keyboardType,
+    this.maxLines,
+    this.validator,
+    required this.icon,
+    this.textInputAction,
+  });
+
+  @override
+  State<_FormField3D> createState() => _FormField3DState();
+}
+
+class _FormField3DState extends State<_FormField3D> {
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: _isFocused 
+                ? const Color(0xFFB41839).withValues(alpha: 0.2)
+                : Colors.black.withValues(alpha: 0.06),
+            blurRadius: _isFocused ? 15 : 10,
+            offset: const Offset(0, 4),
+            spreadRadius: _isFocused ? 1 : 0,
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: widget.controller,
+        keyboardType: widget.keyboardType,
+        maxLines: widget.maxLines ?? 1,
+        validator: widget.validator,
+        textInputAction: widget.textInputAction ?? TextInputAction.next,
+        onTap: () => setState(() => _isFocused = true),
+        onChanged: (value) {
+          if (!_isFocused) {
+            setState(() => _isFocused = true);
+          }
+        },
+        onFieldSubmitted: (value) {
+          setState(() => _isFocused = false);
+          FocusScope.of(context).unfocus();
+        },
+        onEditingComplete: () => setState(() => _isFocused = false),
+        decoration: InputDecoration(
+          labelText: widget.label,
+          filled: true,
+          fillColor: Colors.white,
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              gradient: _isFocused
+                  ? const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFB41839),
+                        Color(0xFF3F1B3D),
+                      ],
+                    )
+                  : LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.grey[300]!,
+                        Colors.grey[400]!,
+                      ],
+                    ),
+              boxShadow: [
+                BoxShadow(
+                  color: _isFocused
+                      ? const Color(0xFFB41839).withValues(alpha: 0.3)
+                      : Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Icon(
+              widget.icon,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey[300]!),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey[300]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(
+              color: Color(0xFFB41839),
+              width: 2,
+            ),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.red),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.red, width: 2),
+          ),
+          labelStyle: TextStyle(
+            color: _isFocused ? const Color(0xFFB41839) : Colors.grey[600],
+            fontWeight: _isFocused ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Dropdown avec design 3D amélioré
+class _DropdownField3D extends StatefulWidget {
+  final String? value;
+  final String label;
+  final List<DropdownMenuItem<String>> items;
+  final Function(String?)? onChanged;
+  final IconData icon;
+
+  const _DropdownField3D({
+    this.value,
+    required this.label,
+    required this.items,
+    required this.onChanged,
+    required this.icon,
+  });
+
+  @override
+  State<_DropdownField3D> createState() => _DropdownField3DState();
+}
+
+class _DropdownField3DState extends State<_DropdownField3D> {
+  bool _isFocused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: _isFocused 
+                ? const Color(0xFFB41839).withValues(alpha: 0.2)
+                : Colors.black.withValues(alpha: 0.06),
+            blurRadius: _isFocused ? 15 : 10,
+            offset: const Offset(0, 4),
+            spreadRadius: _isFocused ? 1 : 0,
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField<String>(
+        initialValue: widget.value,
+        decoration: InputDecoration(
+          labelText: widget.label,
+          filled: true,
+          fillColor: Colors.white,
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              gradient: _isFocused
+                  ? const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFB41839),
+                        Color(0xFF3F1B3D),
+                      ],
+                    )
+                  : LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.grey[300]!,
+                        Colors.grey[400]!,
+                      ],
+                    ),
+              boxShadow: [
+                BoxShadow(
+                  color: _isFocused
+                      ? const Color(0xFFB41839).withValues(alpha: 0.3)
+                      : Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Icon(
+              widget.icon,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey[300]!),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey[300]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(
+              color: Color(0xFFB41839),
+              width: 2,
+            ),
+          ),
+          labelStyle: TextStyle(
+            color: _isFocused ? const Color(0xFFB41839) : Colors.grey[600],
+            fontWeight: _isFocused ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+        items: widget.items,
+        onChanged: (value) {
+          setState(() => _isFocused = false);
+          widget.onChanged?.call(value);
+        },
+        onTap: () => setState(() => _isFocused = true),
+      ),
+    );
+  }
+}
+
+// Switch avec design 3D amélioré
+class _Switch3D extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _Switch3D({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Transform.scale(
+            scale: 1.1,
+            child: Switch(
+              value: value,
+              onChanged: onChanged,
+              activeThumbColor: const Color(0xFFB41839),
+              activeTrackColor: const Color(0xFF3F1B3D),
+            ),
+          ),
+        ],
       ),
     );
   }

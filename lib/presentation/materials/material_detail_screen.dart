@@ -25,6 +25,7 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text('Détails du matériau'),
         actions: [

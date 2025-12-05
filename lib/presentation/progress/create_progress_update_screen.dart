@@ -27,8 +27,8 @@ class _CreateProgressUpdateScreenState
   final AudioRecorder _audioRecorder = AudioRecorder();
 
   int _progress = 0;
-  List<File> _photos = [];
-  List<File> _videos = [];
+  final List<File> _photos = [];
+  final List<File> _videos = [];
   File? _audioFile;
   bool _isRecording = false;
   Position? _position;
@@ -73,11 +73,13 @@ class _CreateProgressUpdateScreenState
       if (status.isDenied && Platform.isAndroid) {
         final cameraStatus = await Permission.camera.request();
         if (cameraStatus.isDenied) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Permission refusée'),
-            ),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Permission refusée'),
+              ),
+            );
+          }
           return;
         }
       }
@@ -92,11 +94,13 @@ class _CreateProgressUpdateScreenState
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur: $e'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+          ),
+        );
+      }
     }
   }
 
@@ -104,11 +108,13 @@ class _CreateProgressUpdateScreenState
     try {
       final status = await Permission.camera.request();
       if (status.isDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Permission de caméra refusée'),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Permission de caméra refusée'),
+            ),
+          );
+        }
         return;
       }
 
@@ -123,11 +129,13 @@ class _CreateProgressUpdateScreenState
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur: $e'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+          ),
+        );
+      }
     }
   }
 
@@ -143,11 +151,13 @@ class _CreateProgressUpdateScreenState
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur: $e'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+          ),
+        );
+      }
     }
   }
 
@@ -155,11 +165,13 @@ class _CreateProgressUpdateScreenState
     try {
       final status = await Permission.camera.request();
       if (status.isDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Permission de caméra refusée'),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Permission de caméra refusée'),
+            ),
+          );
+        }
         return;
       }
 
@@ -173,11 +185,13 @@ class _CreateProgressUpdateScreenState
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur: $e'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+          ),
+        );
+      }
     }
   }
 
@@ -185,11 +199,13 @@ class _CreateProgressUpdateScreenState
     try {
       final status = await Permission.microphone.request();
       if (status.isDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Permission de microphone refusée'),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Permission de microphone refusée'),
+            ),
+          );
+        }
         return;
       }
 
@@ -208,11 +224,13 @@ class _CreateProgressUpdateScreenState
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur: $e'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+          ),
+        );
+      }
     }
   }
 
@@ -229,11 +247,13 @@ class _CreateProgressUpdateScreenState
       setState(() {
         _isRecording = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur: $e'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+          ),
+        );
+      }
     }
   }
 
@@ -295,6 +315,7 @@ class _CreateProgressUpdateScreenState
     );
 
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(

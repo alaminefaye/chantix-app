@@ -42,8 +42,30 @@ class _ProgressScreenState extends State<ProgressScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Avancement'),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFB41839), // Rouge
+                Color(0xFF3F1B3D), // Violet foncé
+              ],
+            ),
+          ),
+        ),
+        title: const Text(
+          'Avancement',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           if (_selectedProject != null)
             IconButton(
@@ -66,14 +88,14 @@ class _ProgressScreenState extends State<ProgressScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFFB41839).withAlpha((255 * 0.1).round()),
-                  const Color(0xFF3F1B3D).withAlpha((255 * 0.1).round()),
-                ],
-              ),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Consumer<ProjectProvider>(
               builder: (context, projectProvider, _) {
@@ -96,30 +118,59 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   );
                 }
 
-                return DropdownButtonFormField<ProjectModel>(
-                  value: _selectedProject,
-                  decoration: InputDecoration(
-                    labelText: 'Sélectionner un projet',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
+                return Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
+                  child: DropdownButtonFormField<ProjectModel>(
+                    initialValue: _selectedProject,
+                    decoration: InputDecoration(
+                      labelText: 'Sélectionner un projet',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      prefixIcon: Container(
+                        margin: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFFB41839),
+                              Color(0xFF3F1B3D),
+                            ],
+                          ),
+                        ),
+                        child: const Icon(Icons.construction, color: Colors.white, size: 20),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
                   items: projectProvider.projects.map((project) {
                     return DropdownMenuItem<ProjectModel>(
                       value: project,
                       child: Text(project.name),
                     );
                   }).toList(),
-                  onChanged: (project) {
-                    setState(() {
-                      _selectedProject = project;
-                    });
-                    if (project != null) {
-                      _loadProgressUpdates();
-                    }
-                  },
+                    onChanged: (project) {
+                      setState(() {
+                        _selectedProject = project;
+                      });
+                      if (project != null) {
+                        _loadProgressUpdates();
+                      }
+                    },
+                  ),
                 );
               },
             ),
@@ -215,11 +266,23 @@ class _ProgressScreenState extends State<ProgressScreen> {
                           itemCount: updates.length,
                           itemBuilder: (context, index) {
                             final update = updates[index];
-                            return Card(
+                            return Container(
                               margin: const EdgeInsets.only(bottom: 12),
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                color: Colors.white,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.06),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(16),
@@ -275,15 +338,28 @@ class _ProgressScreenState extends State<ProgressScreen> {
                                         ),
                                       ),
                                     // Barre de progression
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(4),
-                                      child: LinearProgressIndicator(
-                                        value: update.progress / 100,
-                                        minHeight: 8,
-                                        backgroundColor: Colors.grey[200],
-                                        valueColor:
-                                            const AlwaysStoppedAnimation<Color>(
-                                          Color(0xFFB41839),
+                                    Container(
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(6),
+                                        color: Colors.grey[200],
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.05),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(6),
+                                        child: LinearProgressIndicator(
+                                          value: update.progress / 100,
+                                          minHeight: 12,
+                                          backgroundColor: Colors.transparent,
+                                          valueColor: const AlwaysStoppedAnimation<Color>(
+                                            Color(0xFFB41839),
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -367,23 +443,44 @@ class _ProgressScreenState extends State<ProgressScreen> {
         ],
       ),
       floatingActionButton: _selectedProject != null
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => CreateProgressUpdateScreen(
-                      projectId: _selectedProject!.id,
-                    ),
+          ? Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFB41839),
+                    Color(0xFF3F1B3D),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFB41839).withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
-                ).then((_) {
-                  _loadProgressUpdates();
-                });
-              },
-              backgroundColor: const Color(0xFFB41839),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                'Nouvelle mise à jour',
-                style: TextStyle(color: Colors.white),
+                ],
+              ),
+              child: FloatingActionButton.extended(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CreateProgressUpdateScreen(
+                        projectId: _selectedProject!.id,
+                      ),
+                    ),
+                  ).then((_) {
+                    _loadProgressUpdates();
+                  });
+                },
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: const Text(
+                  'Nouvelle mise à jour',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             )
           : null,

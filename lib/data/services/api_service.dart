@@ -66,6 +66,21 @@ class ApiService {
     return await _dio.get(ApiConfig.user);
   }
 
+  Future<Response> changePassword(String currentPassword, String newPassword) async {
+    return await _dio.post(
+      ApiConfig.changePassword,
+      data: {
+        'current_password': currentPassword,
+        'password': newPassword,
+        'password_confirmation': newPassword,
+      },
+    );
+  }
+
+  Future<Response> deleteAccount() async {
+    return await _dio.delete(ApiConfig.deleteAccount);
+  }
+
   // Méthode générique pour les requêtes GET
   Future<Response> get(String endpoint, {Map<String, dynamic>? queryParameters}) async {
     return await _dio.get(endpoint, queryParameters: queryParameters);

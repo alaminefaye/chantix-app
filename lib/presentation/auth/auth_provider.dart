@@ -107,6 +107,51 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<Map<String, dynamic>> changePassword(String currentPassword, String newPassword) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final result = await _authRepository.changePassword(currentPassword, newPassword);
+      _isLoading = false;
+      notifyListeners();
+      return result;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteAccount() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final result = await _authRepository.deleteAccount();
+      if (result['success'] == true) {
+        _user = null;
+      }
+      _isLoading = false;
+      notifyListeners();
+      return result;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
+    }
+  }
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();

@@ -60,11 +60,13 @@ class _CheckInScreenState extends State<CheckInScreen> {
     try {
       final status = await Permission.camera.request();
       if (status.isDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Permission de caméra refusée'),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Permission de caméra refusée'),
+            ),
+          );
+        }
         return;
       }
 
@@ -79,11 +81,13 @@ class _CheckInScreenState extends State<CheckInScreen> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur lors de la prise de photo: $e'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la prise de photo: $e'),
+          ),
+        );
+      }
     }
   }
 
@@ -100,11 +104,13 @@ class _CheckInScreenState extends State<CheckInScreen> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur lors de la sélection: $e'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la sélection: $e'),
+          ),
+        );
+      }
     }
   }
 
@@ -164,6 +170,7 @@ class _CheckInScreenState extends State<CheckInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(

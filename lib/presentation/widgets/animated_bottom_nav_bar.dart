@@ -69,7 +69,7 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
               selectedPosition: selectedPosition + circleRadius,
               circleRadius: circleRadius,
             ),
-            child: Container(
+            child: SizedBox(
               height: 65,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -137,7 +137,7 @@ class _AnimatedBottomNavBarState extends State<AnimatedBottomNavBar>
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       blurRadius: 20,
                       spreadRadius: 3,
                     ),
@@ -258,7 +258,7 @@ class _NavBarPainter extends CustomPainter {
     
     // Dessiner l'ombre (plus subtile avec le dégradé)
     final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.2)
+      ..color = Colors.black.withValues(alpha: 0.2)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
     
     canvas.drawPath(path, shadowPaint);

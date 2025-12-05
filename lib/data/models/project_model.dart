@@ -6,6 +6,7 @@ part 'project_model.g.dart';
 
 @JsonSerializable()
 class ProjectModel {
+  @JsonKey(fromJson: _intFromJson)
   final int id;
   final String name;
   final String? description;
@@ -16,16 +17,18 @@ class ProjectModel {
   final String? startDate;
   @JsonKey(name: 'end_date')
   final String? endDate;
+  @JsonKey(fromJson: _budgetFromJson)
   final double budget;
   final String status;
+  @JsonKey(fromJson: _intFromJson)
   final int progress;
   @JsonKey(name: 'client_name')
   final String? clientName;
   @JsonKey(name: 'client_contact')
   final String? clientContact;
-  @JsonKey(name: 'company_id')
+  @JsonKey(name: 'company_id', fromJson: _intFromJson)
   final int companyId;
-  @JsonKey(name: 'created_by')
+  @JsonKey(name: 'created_by', fromJson: _intFromJson)
   final int createdBy;
   @JsonKey(name: 'created_at')
   final String? createdAt;
@@ -62,6 +65,26 @@ class ProjectModel {
       _$ProjectModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$ProjectModelToJson(this);
+
+  static double _budgetFromJson(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      final parsed = double.tryParse(value);
+      return parsed ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  static int _intFromJson(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      return parsed ?? 0;
+    }
+    return 0;
+  }
 
   String get statusLabel {
     switch (status) {

@@ -7,7 +7,7 @@ part of 'project_model.dart';
 // **************************************************************************
 
 ProjectModel _$ProjectModelFromJson(Map<String, dynamic> json) => ProjectModel(
-      id: (json['id'] as num).toInt(),
+      id: ProjectModel._intFromJson(json['id']),
       name: json['name'] as String,
       description: json['description'] as String?,
       address: json['address'] as String?,
@@ -15,13 +15,13 @@ ProjectModel _$ProjectModelFromJson(Map<String, dynamic> json) => ProjectModel(
       longitude: (json['longitude'] as num?)?.toDouble(),
       startDate: json['start_date'] as String?,
       endDate: json['end_date'] as String?,
-      budget: (json['budget'] as num).toDouble(),
+      budget: ProjectModel._budgetFromJson(json['budget']),
       status: json['status'] as String,
-      progress: (json['progress'] as num).toInt(),
+      progress: ProjectModel._intFromJson(json['progress']),
       clientName: json['client_name'] as String?,
       clientContact: json['client_contact'] as String?,
-      companyId: (json['company_id'] as num).toInt(),
-      createdBy: (json['created_by'] as num).toInt(),
+      companyId: ProjectModel._intFromJson(json['company_id']),
+      createdBy: ProjectModel._intFromJson(json['created_by']),
       createdAt: json['created_at'] as String?,
       updatedAt: json['updated_at'] as String?,
       creator: json['creator'] == null

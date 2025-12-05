@@ -13,6 +13,8 @@ class ApiConfig {
   static const String user = '/v1/user';
   static const String forgotPassword = '/v1/forgot-password';
   static const String resetPassword = '/v1/reset-password';
+  static const String changePassword = '/v1/change-password';
+  static const String deleteAccount = '/v1/delete-account';
   
   // Headers
   static Map<String, String> getHeaders({String? token}) {

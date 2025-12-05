@@ -62,8 +62,30 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Dépenses'),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFB41839), // Rouge
+                Color(0xFF3F1B3D), // Violet foncé
+              ],
+            ),
+          ),
+        ),
+        title: const Text(
+          'Dépenses',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           Consumer<ExpenseProvider>(
             builder: (context, expenseProvider, _) {
@@ -94,14 +116,14 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFFB41839).withAlpha((255 * 0.1).round()),
-                  const Color(0xFF3F1B3D).withAlpha((255 * 0.1).round()),
-                ],
-              ),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Consumer<ProjectProvider>(
               builder: (context, projectProvider, _) {
@@ -111,29 +133,58 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       return const Text('Aucun projet disponible');
                     }
 
-                    return DropdownButtonFormField<ProjectModel>(
-                      value: projectProvider.projects.firstWhere(
-                        (p) => p.id == expenseProvider.selectedProjectId,
-                        orElse: () => projectProvider.projects.first,
+                    return Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      decoration: InputDecoration(
-                        labelText: 'Sélectionner un projet',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      child: DropdownButtonFormField<ProjectModel>(
+                        initialValue: projectProvider.projects.firstWhere(
+                          (p) => p.id == expenseProvider.selectedProjectId,
+                          orElse: () => projectProvider.projects.first,
                         ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
+                        decoration: InputDecoration(
+                          labelText: 'Sélectionner un projet',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          prefixIcon: Container(
+                            margin: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFFB41839),
+                                  Color(0xFF3F1B3D),
+                                ],
+                              ),
+                            ),
+                            child: const Icon(Icons.construction, color: Colors.white, size: 20),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
                       items: projectProvider.projects.map((project) {
                         return DropdownMenuItem<ProjectModel>(
                           value: project,
                           child: Text(project.name),
                         );
                       }).toList(),
-                      onChanged: (project) {
-                        expenseProvider.setSelectedProject(project?.id);
-                        expenseProvider.loadExpenses();
-                      },
+                        onChanged: (project) {
+                          expenseProvider.setSelectedProject(project?.id);
+                          expenseProvider.loadExpenses();
+                        },
+                      ),
                     );
                   },
                 );
@@ -143,14 +194,24 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
           // Filtres
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: Colors.grey[100],
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Row(
               children: [
                 Expanded(
-                  child: ChoiceChip(
-                    label: const Text('Toutes'),
-                    selected: _filter == 'all',
+                  child: _FilterChip3D(
+                    label: 'Toutes',
+                    icon: Icons.check_circle,
+                    isSelected: _filter == 'all',
                     onSelected: (selected) {
                       if (selected) {
                         setState(() {
@@ -162,9 +223,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: ChoiceChip(
-                    label: const Text('Payées'),
-                    selected: _filter == 'paid',
+                  child: _FilterChip3D(
+                    label: 'Payées',
+                    icon: Icons.check_circle,
+                    isSelected: _filter == 'paid',
                     onSelected: (selected) {
                       if (selected) {
                         setState(() {
@@ -176,9 +238,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: ChoiceChip(
-                    label: const Text('Non payées'),
-                    selected: _filter == 'unpaid',
+                  child: _FilterChip3D(
+                    label: 'Non payées',
+                    icon: Icons.check_circle,
+                    isSelected: _filter == 'unpaid',
                     onSelected: (selected) {
                       if (selected) {
                         setState(() {
@@ -201,13 +264,39 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.receipt, size: 64, color: Colors.grey[400]),
-                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.grey[300]!,
+                                Colors.grey[400]!,
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.receipt,
+                            size: 64,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
                         Text(
                           'Sélectionnez un projet pour voir les dépenses',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -224,18 +313,89 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          expenseProvider.errorMessage!,
-                          style: const TextStyle(color: Colors.red),
-                          textAlign: TextAlign.center,
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.red[300]!,
+                                Colors.red[400]!,
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.red.withValues(alpha: 0.3),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.white,
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            expenseProvider.clearError();
-                            expenseProvider.loadExpenses();
-                          },
-                          child: const Text('Réessayer'),
+                        const SizedBox(height: 24),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            expenseProvider.errorMessage!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFFB41839),
+                                Color(0xFF3F1B3D),
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFB41839).withValues(alpha: 0.4),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              expenseProvider.clearError();
+                              expenseProvider.loadExpenses();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: const Text(
+                              'Réessayer',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -250,11 +410,40 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.receipt_long, size: 64, color: Colors.grey[400]),
-                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.grey[300]!,
+                                Colors.grey[400]!,
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.receipt_long,
+                            size: 64,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
                         const Text(
                           'Aucune dépense trouvée',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
@@ -270,23 +459,50 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       final expense = filteredExpenses[index];
                       final typeColor = _getTypeColor(expense.type);
                       
-                      return Card(
+                      return Container(
                         margin: const EdgeInsets.only(bottom: 12),
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.06),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(16),
                           leading: Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: typeColor.withAlpha((255 * 0.1).round()),
                               borderRadius: BorderRadius.circular(12),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  typeColor,
+                                  typeColor.withValues(alpha: 0.8),
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: typeColor.withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Icons.receipt,
-                              color: typeColor,
+                              color: Colors.white,
+                              size: 22,
                             ),
                           ),
                           title: Text(
@@ -397,4 +613,102 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   }
 }
 
+class _FilterChip3D extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final ValueChanged<bool> onSelected;
+
+  const _FilterChip3D({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isSelected) {
+      return GestureDetector(
+        onTap: () => onSelected(false),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFB41839),
+                Color(0xFF3F1B3D),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFB41839).withValues(alpha: 0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.check_circle,
+                size: 16,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      return GestureDetector(
+        onTap: () => onSelected(true),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: Colors.grey[100],
+            border: Border.all(color: Colors.grey[300]!, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
+        ),
+      );
+    }
+  }
+}
 

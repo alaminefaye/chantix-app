@@ -45,6 +45,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     // Trouver le pointage actuel (check-in sans check-out)
     final attendances = attendanceProvider.attendances;
+    if (!mounted) return;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userId = authProvider.user?.id;
 
@@ -70,8 +71,30 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Pointage'),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFB41839), // Rouge
+                Color(0xFF3F1B3D), // Violet foncé
+              ],
+            ),
+          ),
+        ),
+        title: const Text(
+          'Pointage',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           if (_selectedProject != null)
             IconButton(
@@ -93,7 +116,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           // Sélection du projet
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.grey[100],
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Consumer<ProjectProvider>(
               builder: (context, projectProvider, _) {
                 if (projectProvider.isLoading) {
@@ -114,26 +146,58 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   );
                 }
 
-                return DropdownButtonFormField<ProjectModel>(
-                  value: _selectedProject,
-                  decoration: const InputDecoration(
-                    labelText: 'Sélectionner un projet',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.construction),
+                return Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
+                  child: DropdownButtonFormField<ProjectModel>(
+                    initialValue: _selectedProject,
+                    decoration: InputDecoration(
+                      labelText: 'Sélectionner un projet',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      prefixIcon: Container(
+                        margin: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFFB41839),
+                              Color(0xFF3F1B3D),
+                            ],
+                          ),
+                        ),
+                        child: const Icon(Icons.construction, color: Colors.white, size: 20),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
                   items: projectProvider.projects.map((project) {
                     return DropdownMenuItem<ProjectModel>(
                       value: project,
                       child: Text(project.name),
                     );
                   }).toList(),
-                  onChanged: (project) {
-                    setState(() {
-                      _selectedProject = project;
-                      _currentAttendance = null;
-                    });
-                    _loadCurrentAttendance();
-                  },
+                    onChanged: (project) {
+                      setState(() {
+                        _selectedProject = project;
+                        _currentAttendance = null;
+                      });
+                      _loadCurrentAttendance();
+                    },
+                  ),
                 );
               },
             ),
@@ -179,7 +243,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Informations du projet
-          Card(
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -187,8 +267,29 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.construction, color: Colors.blue),
-                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFFB41839),
+                              Color(0xFF3F1B3D),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFB41839).withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.construction, color: Colors.white, size: 22),
+                      ),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           _selectedProject!.name,
@@ -227,16 +328,54 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
           // Statut actuel
           if (hasCheckedIn) ...[
-            Card(
-              color: Colors.blue[50],
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.blue[50]!,
+                    Colors.blue[100]!,
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    const Icon(
-                      Icons.check_circle,
-                      color: Colors.blue,
-                      size: 48,
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFF2196F3),
+                            Color(0xFF1976D2),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.withValues(alpha: 0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.check_circle,
+                        color: Colors.white,
+                        size: 48,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     const Text(
@@ -266,36 +405,78 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
           // Boutons d'action
           if (!hasCheckedIn) ...[
-            ElevatedButton.icon(
-              onPressed: () => _navigateToCheckIn(),
-              icon: const Icon(Icons.login, size: 24),
-              label: const Text(
-                'CHECK-IN',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF4CAF50),
+                    Color(0xFF388E3C),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF4CAF50).withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4CAF50),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+              child: ElevatedButton.icon(
+                onPressed: () => _navigateToCheckIn(),
+                icon: const Icon(Icons.login, size: 24),
+                label: const Text(
+                  'CHECK-IN',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
               ),
             ),
           ] else ...[
-            ElevatedButton.icon(
-              onPressed: () => _navigateToCheckOut(),
-              icon: const Icon(Icons.logout, size: 24),
-              label: const Text(
-                'CHECK-OUT',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFF44336),
+                    Color(0xFFD32F2F),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFF44336).withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF44336),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+              child: ElevatedButton.icon(
+                onPressed: () => _navigateToCheckOut(),
+                icon: const Icon(Icons.logout, size: 24),
+                label: const Text(
+                  'CHECK-OUT',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
               ),
             ),
@@ -304,14 +485,28 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           const SizedBox(height: 16),
 
           // Déclarer une absence
-          OutlinedButton.icon(
-            onPressed: () => _navigateToAbsence(),
-            icon: const Icon(Icons.cancel_outlined),
-            label: const Text('Déclarer une absence'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: Colors.white,
+              border: Border.all(color: Colors.grey[300]!),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: OutlinedButton.icon(
+              onPressed: () => _navigateToAbsence(),
+              icon: const Icon(Icons.cancel_outlined),
+              label: const Text('Déclarer une absence'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
           ),
@@ -319,7 +514,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           const SizedBox(height: 24),
 
           // Historique rapide
-          Card(
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -361,23 +572,48 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
                       return Column(
                         children: recentAttendances.map((attendance) {
-                          return ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: attendance.isAbsence
-                                  ? Colors.orange
-                                  : attendance.checkOutTime != null
-                                      ? Colors.green
-                                      : Colors.blue,
-                              child: Icon(
-                                attendance.isAbsence
-                                    ? Icons.cancel
-                                    : attendance.checkOutTime != null
-                                        ? Icons.check
-                                        : Icons.access_time,
-                                color: Colors.white,
-                                size: 20,
-                              ),
+                          final color = attendance.isAbsence
+                              ? Colors.orange
+                              : attendance.checkOutTime != null
+                                  ? Colors.green
+                                  : Colors.blue;
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: Colors.grey[50],
                             ),
+                            child: ListTile(
+                              leading: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      color,
+                                      color.withValues(alpha: 0.8),
+                                    ],
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: color.withValues(alpha: 0.3),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  attendance.isAbsence
+                                      ? Icons.cancel
+                                      : attendance.checkOutTime != null
+                                          ? Icons.check
+                                          : Icons.access_time,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
                             title: Text(
                               attendance.isAbsence
                                   ? 'Absence'
@@ -388,16 +624,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                   ? attendance.absenceReason ?? ''
                                   : '${attendance.hoursWorked?.toStringAsFixed(1) ?? '0'} heures',
                             ),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => AttendanceHistoryScreen(
-                                    projectId: _selectedProject!.id,
+                              trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => AttendanceHistoryScreen(
+                                      projectId: _selectedProject!.id,
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
+                                );
+                              },
+                            ),
                           );
                         }).toList(),
                       );

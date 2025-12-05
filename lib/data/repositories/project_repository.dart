@@ -23,7 +23,8 @@ class ProjectRepository {
       final response = await _apiService.get('/v1/projects/$id');
       
       if (response.statusCode == 200) {
-        return ProjectModel.fromJson(response.data);
+        final data = response.data['data'] ?? response.data;
+        return ProjectModel.fromJson(data);
       }
       return null;
     } catch (e) {
@@ -36,9 +37,10 @@ class ProjectRepository {
       final response = await _apiService.post('/v1/projects', data: data);
       
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final projectData = response.data['data'] ?? response.data;
         return {
           'success': true,
-          'project': ProjectModel.fromJson(response.data),
+          'project': ProjectModel.fromJson(projectData),
         };
       }
       
@@ -59,9 +61,10 @@ class ProjectRepository {
       final response = await _apiService.put('/v1/projects/$id', data: data);
       
       if (response.statusCode == 200) {
+        final projectData = response.data['data'] ?? response.data;
         return {
           'success': true,
-          'project': ProjectModel.fromJson(response.data),
+          'project': ProjectModel.fromJson(projectData),
         };
       }
       

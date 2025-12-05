@@ -51,8 +51,30 @@ class _TasksScreenState extends State<TasksScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Tâches'),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFB41839), // Rouge
+                Color(0xFF3F1B3D), // Violet foncé
+              ],
+            ),
+          ),
+        ),
+        title: const Text(
+          'Tâches',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           Consumer<TaskProvider>(
             builder: (context, taskProvider, _) {
@@ -83,14 +105,14 @@ class _TasksScreenState extends State<TasksScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFFB41839).withAlpha((255 * 0.1).round()),
-                  const Color(0xFF3F1B3D).withAlpha((255 * 0.1).round()),
-                ],
-              ),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Consumer<ProjectProvider>(
               builder: (context, projectProvider, _) {
@@ -100,29 +122,58 @@ class _TasksScreenState extends State<TasksScreen> {
                       return const Text('Aucun projet disponible');
                     }
 
-                    return DropdownButtonFormField<ProjectModel>(
-                      value: projectProvider.projects.firstWhere(
-                        (p) => p.id == taskProvider.selectedProjectId,
-                        orElse: () => projectProvider.projects.first,
+                    return Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      decoration: InputDecoration(
-                        labelText: 'Sélectionner un projet',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      child: DropdownButtonFormField<ProjectModel>(
+                        initialValue: projectProvider.projects.firstWhere(
+                          (p) => p.id == taskProvider.selectedProjectId,
+                          orElse: () => projectProvider.projects.first,
                         ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
+                        decoration: InputDecoration(
+                          labelText: 'Sélectionner un projet',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          prefixIcon: Container(
+                            margin: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFFB41839),
+                                  Color(0xFF3F1B3D),
+                                ],
+                              ),
+                            ),
+                            child: const Icon(Icons.construction, color: Colors.white, size: 20),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
                       items: projectProvider.projects.map((project) {
                         return DropdownMenuItem<ProjectModel>(
                           value: project,
                           child: Text(project.name),
                         );
                       }).toList(),
-                      onChanged: (project) {
-                        taskProvider.setSelectedProject(project?.id);
-                        taskProvider.loadTasks();
-                      },
+                        onChanged: (project) {
+                          taskProvider.setSelectedProject(project?.id);
+                          taskProvider.loadTasks();
+                        },
+                      ),
                     );
                   },
                 );
@@ -132,23 +183,98 @@ class _TasksScreenState extends State<TasksScreen> {
 
           // Filtres
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: Colors.grey[100],
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildFilterChip('Toutes', 'all'),
+                  _FilterChip3D(
+                    label: 'Toutes',
+                    icon: Icons.check_circle,
+                    isSelected: _filter == 'all',
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _filter = 'all';
+                        });
+                      }
+                    },
+                  ),
                   const SizedBox(width: 8),
-                  _buildFilterChip('À faire', 'a_faire'),
+                  _FilterChip3D(
+                    label: 'À faire',
+                    icon: Icons.check_circle,
+                    isSelected: _filter == 'a_faire',
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _filter = 'a_faire';
+                        });
+                      }
+                    },
+                  ),
                   const SizedBox(width: 8),
-                  _buildFilterChip('En cours', 'en_cours'),
+                  _FilterChip3D(
+                    label: 'En cours',
+                    icon: Icons.check_circle,
+                    isSelected: _filter == 'en_cours',
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _filter = 'en_cours';
+                        });
+                      }
+                    },
+                  ),
                   const SizedBox(width: 8),
-                  _buildFilterChip('Terminé', 'termine'),
+                  _FilterChip3D(
+                    label: 'Terminé',
+                    icon: Icons.check_circle,
+                    isSelected: _filter == 'termine',
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _filter = 'termine';
+                        });
+                      }
+                    },
+                  ),
                   const SizedBox(width: 8),
-                  _buildFilterChip('Bloqué', 'bloque'),
+                  _FilterChip3D(
+                    label: 'Bloqué',
+                    icon: Icons.check_circle,
+                    isSelected: _filter == 'bloque',
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _filter = 'bloque';
+                        });
+                      }
+                    },
+                  ),
                   const SizedBox(width: 8),
-                  _buildFilterChip('En retard', 'overdue'),
+                  _FilterChip3D(
+                    label: 'En retard',
+                    icon: Icons.check_circle,
+                    isSelected: _filter == 'overdue',
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _filter = 'overdue';
+                        });
+                      }
+                    },
+                  ),
                 ],
               ),
             ),
@@ -163,13 +289,39 @@ class _TasksScreenState extends State<TasksScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.task, size: 64, color: Colors.grey[400]),
-                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.grey[300]!,
+                                Colors.grey[400]!,
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.task,
+                            size: 64,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
                         Text(
                           'Sélectionnez un projet pour voir les tâches',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -186,18 +338,89 @@ class _TasksScreenState extends State<TasksScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          taskProvider.errorMessage!,
-                          style: const TextStyle(color: Colors.red),
-                          textAlign: TextAlign.center,
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.red[300]!,
+                                Colors.red[400]!,
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.red.withValues(alpha: 0.3),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.white,
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            taskProvider.clearError();
-                            taskProvider.loadTasks();
-                          },
-                          child: const Text('Réessayer'),
+                        const SizedBox(height: 24),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            taskProvider.errorMessage!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFFB41839),
+                                Color(0xFF3F1B3D),
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFB41839).withValues(alpha: 0.4),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              taskProvider.clearError();
+                              taskProvider.loadTasks();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: const Text(
+                              'Réessayer',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -211,11 +434,40 @@ class _TasksScreenState extends State<TasksScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.task_alt, size: 64, color: Colors.grey[400]),
-                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.grey[300]!,
+                                Colors.grey[400]!,
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.task_alt,
+                            size: 64,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
                         const Text(
                           'Aucune tâche trouvée',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
@@ -229,23 +481,50 @@ class _TasksScreenState extends State<TasksScreen> {
                     itemCount: filteredTasks.length,
                     itemBuilder: (context, index) {
                       final task = filteredTasks[index];
-                      return Card(
+                      return Container(
                         margin: const EdgeInsets.only(bottom: 12),
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.white,
+                            boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.06),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(16),
                           leading: Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: task.statusColor.withAlpha((255 * 0.1).round()),
                               borderRadius: BorderRadius.circular(12),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  task.statusColor,
+                                  task.statusColor.withValues(alpha: 0.8),
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: task.statusColor.withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Icons.task,
-                              color: task.statusColor,
+                              color: Colors.white,
+                              size: 22,
                             ),
                           ),
                           title: Text(
@@ -346,14 +625,28 @@ class _TasksScreenState extends State<TasksScreen> {
                                 ),
                               ],
                               const SizedBox(height: 8),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: LinearProgressIndicator(
-                                  value: task.progress / 100,
-                                  minHeight: 6,
-                                  backgroundColor: Colors.grey[200],
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    task.statusColor,
+                              Container(
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(4),
+                                  color: Colors.grey[200],
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.05),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: LinearProgressIndicator(
+                                    value: task.progress / 100,
+                                    minHeight: 8,
+                                    backgroundColor: Colors.transparent,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      task.statusColor,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -384,20 +677,6 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, String value) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: _filter == value,
-      onSelected: (selected) {
-        if (selected) {
-          setState(() {
-            _filter = value;
-          });
-        }
-      },
-    );
-  }
-
   String _formatDate(String dateString) {
     try {
       final date = DateTime.parse(dateString);
@@ -408,4 +687,102 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 }
 
+class _FilterChip3D extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final ValueChanged<bool> onSelected;
+
+  const _FilterChip3D({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isSelected) {
+      return GestureDetector(
+        onTap: () => onSelected(false),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFB41839),
+                Color(0xFF3F1B3D),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFB41839).withValues(alpha: 0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.check_circle,
+                size: 16,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      return GestureDetector(
+        onTap: () => onSelected(true),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: Colors.grey[100],
+            border: Border.all(color: Colors.grey[300]!, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
+        ),
+      );
+    }
+  }
+}
 

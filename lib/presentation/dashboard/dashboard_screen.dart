@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../auth/auth_provider.dart';
 import '../auth/login_screen.dart';
 import '../projects/projects_screen.dart';
@@ -73,6 +74,8 @@ class DashboardHomeScreen extends StatefulWidget {
 }
 
 class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
+  int _selectedTab = 0; // 0: Projets, 1: Budget, 2: Avancement
+
   @override
   void initState() {
     super.initState();
@@ -87,16 +90,31 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFB41839), // Rouge
+                Color(0xFF3F1B3D), // Violet foncé
+              ],
+            ),
+          ),
+        ),
         title: const Text(
           'Dashboard',
           style: TextStyle(
-            color: Colors.black87,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 24,
           ),
         ),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
+          // Bouton de notification animé
+          _AnimatedNotificationButton(),
+          const SizedBox(width: 8),
           Consumer<AuthProvider>(
             builder: (context, authProvider, _) {
               return PopupMenuButton(
@@ -164,99 +182,258 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
             );
           }
 
-          return RefreshIndicator(
-            onRefresh: () => dashboardProvider.loadDashboardData(),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Statistiques principales avec design 3D
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _StatCard3D(
-                          title: 'Total Projets',
-                          value: dashboardProvider.totalProjects.toString(),
-                          icon: Icons.construction,
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF4A90E2),
-                              Color(0xFF357ABD),
-                            ],
+          return Column(
+            children: [
+              // Statistiques principales fixes (ne scrollent pas)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _StatCard3D(
+                            title: 'Total Projets',
+                            value: dashboardProvider.totalProjects.toString(),
+                            icon: Icons.construction,
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFF4A90E2),
+                                Color(0xFF357ABD),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _StatCard3D(
-                          title: 'Projets Actifs',
-                          value: dashboardProvider.activeProjects.toString(),
-                          icon: Icons.check_circle,
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF2ECC71),
-                              Color(0xFF27AE60),
-                            ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _StatCard3D(
+                            title: 'Projets Actifs',
+                            value: dashboardProvider.activeProjects.toString(),
+                            icon: Icons.check_circle,
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFF2ECC71),
+                                Color(0xFF27AE60),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _StatCard3D(
-                          title: 'Budget Total',
-                          value: '${dashboardProvider.totalBudget.toStringAsFixed(0)} FCFA',
-                          icon: Icons.currency_exchange,
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFFF39C12),
-                              Color(0xFFE67E22),
-                            ],
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _StatCard3D(
+                            title: 'Budget Total',
+                            value: '${dashboardProvider.totalBudget.toStringAsFixed(0)} FCFA',
+                            icon: Icons.currency_exchange,
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFFF39C12),
+                                Color(0xFFE67E22),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _StatCard3D(
-                          title: 'Avancement Moyen',
-                          value: '${dashboardProvider.averageProgress.toStringAsFixed(1)}%',
-                          icon: Icons.trending_up,
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF9B59B6),
-                              Color(0xFF8E44AD),
-                            ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _StatCard3D(
+                            title: 'Avancement Moyen',
+                            value: '${dashboardProvider.averageProgress.toStringAsFixed(1)}%',
+                            icon: Icons.trending_up,
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFF9B59B6),
+                                Color(0xFF8E44AD),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-                  
-                  // Répartition par statut avec design 3D
-                  _DistributionCard3D(
-                    activeProjects: dashboardProvider.activeProjects,
-                    completedProjects: dashboardProvider.completedProjects,
-                    blockedProjects: dashboardProvider.blockedProjects,
-                    totalProjects: dashboardProvider.totalProjects,
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
+              // Contenu scrollable
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () => dashboardProvider.loadDashboardData(),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
+                        // Graphique avec onglets
+                        _ChartCardWithTabs(
+                          selectedTab: _selectedTab,
+                          onTabChanged: (index) {
+                            setState(() {
+                              _selectedTab = index;
+                            });
+                          },
+                          dashboardProvider: dashboardProvider,
+                        ),
+                        const SizedBox(height: 24),
+                        
+                        // Répartition par statut avec design 3D
+                        _DistributionCard3D(
+                          activeProjects: dashboardProvider.activeProjects,
+                          completedProjects: dashboardProvider.completedProjects,
+                          blockedProjects: dashboardProvider.blockedProjects,
+                          totalProjects: dashboardProvider.totalProjects,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           );
         },
+      ),
+    );
+  }
+}
+
+// Bouton de notification animé
+class _AnimatedNotificationButton extends StatefulWidget {
+  const _AnimatedNotificationButton();
+
+  @override
+  State<_AnimatedNotificationButton> createState() => _AnimatedNotificationButtonState();
+}
+
+class _AnimatedNotificationButtonState extends State<_AnimatedNotificationButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _rotationAnimation;
+  final int _notificationCount = 3; // Nombre de notifications (exemple)
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
+    );
+    
+    _rotationAnimation = Tween<double>(begin: -0.1, end: 0.1).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
+    );
+    
+    // Démarrer l'animation continue si il y a des notifications
+    if (_notificationCount > 0) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    // Animation rapide au clic en plus de l'animation continue
+    _controller.stop();
+    _controller.reset();
+    _controller.forward().then((_) {
+      _controller.reverse().then((_) {
+        // Reprendre l'animation continue si il y a des notifications
+        if (_notificationCount > 0) {
+          _controller.repeat(reverse: true);
+        }
+      });
+    });
+    // TODO: Naviguer vers la page de notifications
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _handleTap,
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // Icône de notification avec animation
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _scaleAnimation.value,
+                  child: Transform.rotate(
+                    angle: _rotationAnimation.value,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      child: const Icon(
+                        Icons.notifications_outlined,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            // Badge de notification
+            if (_notificationCount > 0)
+              Positioned(
+                right: 0,
+                top: 4,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withValues(alpha: 0.5),
+                        blurRadius: 4,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
+                  child: Text(
+                    _notificationCount > 9 ? '9+' : '$_notificationCount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -280,25 +457,25 @@ class _StatCard3D extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
             spreadRadius: 0,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
             spreadRadius: 0,
           ),
         ],
       ),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -308,50 +485,331 @@ class _StatCard3D extends StatelessWidget {
             ],
           ),
         ),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icône avec background en dégradé
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                gradient: gradient,
-                boxShadow: [
-                  BoxShadow(
-                    color: gradient.colors.first.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 24,
-              ),
+             // Icône avec background en dégradé
+             Container(
+               padding: const EdgeInsets.all(10),
+               decoration: BoxDecoration(
+                 borderRadius: BorderRadius.circular(10),
+                 gradient: gradient,
+                 boxShadow: [
+                   BoxShadow(
+                     color: gradient.colors.first.withValues(alpha: 0.3),
+                     blurRadius: 6,
+                     offset: const Offset(0, 3),
+                   ),
+                 ],
+               ),
+               child: Icon(
+                 icon,
+                 color: Colors.white,
+                 size: 20,
+               ),
+             ),
+             const SizedBox(height: 12),
+             Text(
+               title,
+               style: TextStyle(
+                 fontSize: 11,
+                 color: Colors.grey[600],
+                 fontWeight: FontWeight.w500,
+               ),
+             ),
+             const SizedBox(height: 4),
+             Text(
+               value,
+               style: const TextStyle(
+                 fontSize: 20,
+                 fontWeight: FontWeight.bold,
+                 color: Colors.black87,
+                 letterSpacing: -0.5,
+               ),
+             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Carte de graphique avec onglets
+class _ChartCardWithTabs extends StatelessWidget {
+  final int selectedTab;
+  final Function(int) onTabChanged;
+  final DashboardProvider dashboardProvider;
+
+  const _ChartCardWithTabs({
+    required this.selectedTab,
+    required this.onTabChanged,
+    required this.dashboardProvider,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Onglets
+            Row(
+              children: [
+                _TabButton(
+                  label: 'Projets',
+                  isSelected: selectedTab == 0,
+                  onTap: () => onTabChanged(0),
+                ),
+                const SizedBox(width: 16),
+                _TabButton(
+                  label: 'Budget',
+                  isSelected: selectedTab == 1,
+                  onTap: () => onTabChanged(1),
+                ),
+                const SizedBox(width: 16),
+                _TabButton(
+                  label: 'Avancement',
+                  isSelected: selectedTab == 2,
+                  onTap: () => onTabChanged(2),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-                letterSpacing: -0.5,
-              ),
+            
+            // Graphique
+            SizedBox(
+              height: 180,
+              child: _buildChart(),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChart() {
+    // Données d'exemple pour les 6 derniers mois
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    
+    List<FlSpot> spots;
+    Color lineColor;
+
+    switch (selectedTab) {
+      case 0: // Projets
+        spots = [
+          FlSpot(0, dashboardProvider.totalProjects * 0.3),
+          FlSpot(1, dashboardProvider.totalProjects * 0.2),
+          FlSpot(2, dashboardProvider.totalProjects * 0.5),
+          FlSpot(3, dashboardProvider.totalProjects.toDouble()),
+          FlSpot(4, dashboardProvider.totalProjects * 0.4),
+          FlSpot(5, dashboardProvider.totalProjects * 0.7),
+        ];
+        lineColor = const Color(0xFFB41839); // Rouge du thème
+        break;
+      case 1: // Budget
+        final maxBudget = dashboardProvider.totalBudget > 0 
+            ? dashboardProvider.totalBudget 
+            : 1000000;
+        spots = [
+          FlSpot(0, (maxBudget * 0.3) / 1000000),
+          FlSpot(1, (maxBudget * 0.2) / 1000000),
+          FlSpot(2, (maxBudget * 0.5) / 1000000),
+          FlSpot(3, maxBudget / 1000000),
+          FlSpot(4, (maxBudget * 0.4) / 1000000),
+          FlSpot(5, (maxBudget * 0.7) / 1000000),
+        ];
+        lineColor = const Color(0xFFB41839); // Rouge du thème
+        break;
+      case 2: // Avancement
+        spots = [
+          FlSpot(0, dashboardProvider.averageProgress * 0.3),
+          FlSpot(1, dashboardProvider.averageProgress * 0.2),
+          FlSpot(2, dashboardProvider.averageProgress * 0.5),
+          FlSpot(3, dashboardProvider.averageProgress.toDouble()),
+          FlSpot(4, dashboardProvider.averageProgress * 0.4),
+          FlSpot(5, dashboardProvider.averageProgress * 0.7),
+        ];
+        lineColor = const Color(0xFFB41839); // Rouge du thème
+        break;
+      default:
+        spots = [];
+        lineColor = const Color(0xFFB41839); // Rouge du thème
+    }
+
+    // Calculer maxY en s'assurant qu'il n'est jamais zéro
+    double maxY;
+    if (spots.isEmpty) {
+      maxY = 10.0;
+    } else {
+      final maxValue = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
+      maxY = (maxValue * 1.2).clamp(1.0, double.infinity);
+    }
+
+    // S'assurer que horizontalInterval n'est jamais zéro
+    final horizontalInterval = (maxY / 4).clamp(1.0, double.infinity);
+
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: horizontalInterval,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: Colors.grey[200]!,
+              strokeWidth: 1,
+            );
+          },
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              getTitlesWidget: (value, meta) {
+                final index = value.toInt();
+                if (index >= 0 && index < months.length) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      months[index],
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                    ),
+                  );
+                }
+                return const Text('');
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 40,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  value.toInt().toString(),
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 10,
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        borderData: FlBorderData(
+          show: true,
+          border: Border(
+            bottom: BorderSide(color: Colors.grey[300]!),
+            left: BorderSide(color: Colors.grey[300]!),
+          ),
+        ),
+        minX: 0,
+        maxX: 5,
+        minY: 0,
+        maxY: maxY,
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            color: lineColor,
+            barWidth: 3,
+            isStrokeCapRound: true,
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) {
+                return FlDotCirclePainter(
+                  radius: 4,
+                  color: Colors.white,
+                  strokeWidth: 2,
+                  strokeColor: lineColor,
+                );
+              },
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              color: lineColor.withValues(alpha: 0.1),
+            ),
+          ),
+        ],
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            tooltipBgColor: lineColor,
+            tooltipRoundedRadius: 8,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Bouton d'onglet
+class _TabButton extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _TabButton({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: isSelected 
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFB41839), // Rouge
+                    Color(0xFF3F1B3D), // Violet foncé
+                  ],
+                )
+              : null,
+          color: isSelected ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey[600],
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 14,
+          ),
         ),
       ),
     );
@@ -376,35 +834,35 @@ class _DistributionCard3D extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 30,
-            offset: const Offset(0, 15),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
             spreadRadius: 0,
           ),
         ],
       ),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           color: Colors.white,
         ),
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Répartition des Projets',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
                 letterSpacing: -0.5,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             _ProgressBar3D(
               label: 'En cours',
               value: activeProjects,
@@ -416,7 +874,7 @@ class _DistributionCard3D extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             _ProgressBar3D(
               label: 'Terminés',
               value: completedProjects,
@@ -428,7 +886,7 @@ class _DistributionCard3D extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             _ProgressBar3D(
               label: 'Bloqués',
               value: blockedProjects,
@@ -486,7 +944,7 @@ class _ProgressBar3D extends StatelessWidget {
                 gradient: gradient,
                 boxShadow: [
                   BoxShadow(
-                    color: gradient.colors.first.withOpacity(0.3),
+                    color: gradient.colors.first.withValues(alpha: 0.3),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -511,7 +969,7 @@ class _ProgressBar3D extends StatelessWidget {
             color: Colors.grey[200],
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -535,7 +993,7 @@ class _ProgressBar3D extends StatelessWidget {
                       gradient: gradient,
                       boxShadow: [
                         BoxShadow(
-                          color: gradient.colors.first.withOpacity(0.4),
+                          color: gradient.colors.first.withValues(alpha: 0.4),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),

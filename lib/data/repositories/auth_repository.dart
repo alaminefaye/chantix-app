@@ -175,6 +175,80 @@ class AuthRepository {
     return token != null && token.isNotEmpty;
   }
 
+  Future<Map<String, dynamic>> changePassword(String currentPassword, String newPassword) async {
+    try {
+      final response = await _apiService.changePassword(currentPassword, newPassword);
+      
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': 'Mot de passe modifié avec succès.',
+        };
+      }
+
+      final errorData = response.data;
+      String errorMessage = 'Erreur lors de la modification du mot de passe.';
+      
+      if (errorData is Map) {
+        if (errorData.containsKey('message')) {
+          errorMessage = errorData['message'] as String;
+        } else if (errorData.containsKey('errors')) {
+          final errors = errorData['errors'];
+          if (errors is Map && errors.isNotEmpty) {
+            final firstError = errors.values.first;
+            if (firstError is List && firstError.isNotEmpty) {
+              errorMessage = firstError.first as String;
+            } else if (firstError is String) {
+              errorMessage = firstError;
+            }
+          }
+        }
+      }
+
+      return {
+        'success': false,
+        'message': errorMessage,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': _handleError(e),
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteAccount() async {
+    try {
+      final response = await _apiService.deleteAccount();
+      
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        await StorageService.clearAll();
+        _apiService.setToken(null);
+        return {
+          'success': true,
+          'message': 'Compte supprimé avec succès.',
+        };
+      }
+
+      final errorData = response.data;
+      String errorMessage = 'Erreur lors de la suppression du compte.';
+      
+      if (errorData is Map && errorData.containsKey('message')) {
+        errorMessage = errorData['message'] as String;
+      }
+
+      return {
+        'success': false,
+        'message': errorMessage,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': _handleError(e),
+      };
+    }
+  }
+
   String _handleError(dynamic error) {
     // Gérer les erreurs Dio
     if (error is DioException) {

@@ -81,6 +81,7 @@ class _AbsenceScreenState extends State<AbsenceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(

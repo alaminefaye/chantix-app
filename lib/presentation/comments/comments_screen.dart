@@ -36,8 +36,30 @@ class _CommentsScreenState extends State<CommentsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Commentaires'),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFB41839), // Rouge
+                Color(0xFF3F1B3D), // Violet foncé
+              ],
+            ),
+          ),
+        ),
+        title: const Text(
+          'Commentaires',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           Consumer<CommentProvider>(
             builder: (context, commentProvider, _) {
@@ -68,14 +90,14 @@ class _CommentsScreenState extends State<CommentsScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFFB41839).withAlpha((255 * 0.1).round()),
-                  const Color(0xFF3F1B3D).withAlpha((255 * 0.1).round()),
-                ],
-              ),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Consumer<ProjectProvider>(
               builder: (context, projectProvider, _) {
@@ -85,29 +107,58 @@ class _CommentsScreenState extends State<CommentsScreen> {
                       return const Text('Aucun projet disponible');
                     }
 
-                    return DropdownButtonFormField<ProjectModel>(
-                      value: projectProvider.projects.firstWhere(
-                        (p) => p.id == commentProvider.selectedProjectId,
-                        orElse: () => projectProvider.projects.first,
+                    return Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      decoration: InputDecoration(
-                        labelText: 'Sélectionner un projet',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      child: DropdownButtonFormField<ProjectModel>(
+                        initialValue: projectProvider.projects.firstWhere(
+                          (p) => p.id == commentProvider.selectedProjectId,
+                          orElse: () => projectProvider.projects.first,
                         ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
+                        decoration: InputDecoration(
+                          labelText: 'Sélectionner un projet',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          prefixIcon: Container(
+                            margin: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFFB41839),
+                                  Color(0xFF3F1B3D),
+                                ],
+                              ),
+                            ),
+                            child: const Icon(Icons.construction, color: Colors.white, size: 20),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
                       items: projectProvider.projects.map((project) {
                         return DropdownMenuItem<ProjectModel>(
                           value: project,
                           child: Text(project.name),
                         );
                       }).toList(),
-                      onChanged: (project) {
-                        commentProvider.setSelectedProject(project?.id);
-                        commentProvider.loadComments();
-                      },
+                        onChanged: (project) {
+                          commentProvider.setSelectedProject(project?.id);
+                          commentProvider.loadComments();
+                        },
+                      ),
                     );
                   },
                 );
@@ -124,13 +175,39 @@ class _CommentsScreenState extends State<CommentsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.comment, size: 64, color: Colors.grey[400]),
-                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.grey[300]!,
+                                Colors.grey[400]!,
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.comment,
+                            size: 64,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
                         Text(
                           'Sélectionnez un projet pour voir les commentaires',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -147,18 +224,89 @@ class _CommentsScreenState extends State<CommentsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          commentProvider.errorMessage!,
-                          style: const TextStyle(color: Colors.red),
-                          textAlign: TextAlign.center,
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.red[300]!,
+                                Colors.red[400]!,
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.red.withValues(alpha: 0.3),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.white,
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            commentProvider.clearError();
-                            commentProvider.loadComments();
-                          },
-                          child: const Text('Réessayer'),
+                        const SizedBox(height: 24),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            commentProvider.errorMessage!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFFB41839),
+                                Color(0xFF3F1B3D),
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFB41839).withValues(alpha: 0.4),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              commentProvider.clearError();
+                              commentProvider.loadComments();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: const Text(
+                              'Réessayer',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -170,25 +318,91 @@ class _CommentsScreenState extends State<CommentsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.comment_outlined, size: 64, color: Colors.grey[400]),
-                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.grey[300]!,
+                                Colors.grey[400]!,
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.comment_outlined,
+                            size: 64,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
                         const Text(
                           'Aucun commentaire',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => CreateCommentScreen(
-                                  projectId: commentProvider.selectedProjectId!,
-                                ),
+                        const SizedBox(height: 24),
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFFB41839),
+                                Color(0xFF3F1B3D),
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFB41839).withValues(alpha: 0.4),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
                               ),
-                            );
-                          },
-                          icon: const Icon(Icons.add_comment),
-                          label: const Text('Ajouter un commentaire'),
+                            ],
+                          ),
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => CreateCommentScreen(
+                                    projectId: commentProvider.selectedProjectId!,
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.add_comment, color: Colors.white),
+                            label: const Text(
+                              'Ajouter un commentaire',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -219,11 +433,23 @@ class _CommentsScreenState extends State<CommentsScreen> {
     CommentModel comment,
     CommentProvider commentProvider,
   ) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -233,14 +459,32 @@ class _CommentsScreenState extends State<CommentsScreen> {
             // En-tête du commentaire
             Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Colors.blue.withAlpha((255 * 0.2).round()),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF2196F3),
+                        Color(0xFF1976D2),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blue.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
                   child: Text(
                     comment.user?.name[0].toUpperCase() ?? 'U',
                     style: const TextStyle(
-                      color: Colors.blue,
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      fontSize: 18,
                     ),
                   ),
                 ),
@@ -304,31 +548,67 @@ class _CommentsScreenState extends State<CommentsScreen> {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
                       child: isImage
                           ? ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(12),
                               child: CachedNetworkImage(
                                 imageUrl: fullUrl,
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) => const Center(
-                                  child: CircularProgressIndicator(),
+                                placeholder: (context, url) => Container(
+                                  color: Colors.grey[200],
+                                  child: const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
                                 ),
-                                errorWidget: (context, url, error) => const Icon(Icons.error),
+                                errorWidget: (context, url, error) => Container(
+                                  color: Colors.grey[200],
+                                  child: const Icon(Icons.error),
+                                ),
                               ),
                             )
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.insert_drive_file, size: 32),
-                                Text(
-                                  name.length > 10 ? '${name.substring(0, 10)}...' : name,
-                                  style: const TextStyle(fontSize: 10),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
+                          : Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.grey[200],
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Colors.grey[300]!,
+                                          Colors.grey[400]!,
+                                        ],
+                                      ),
+                                    ),
+                                    child: const Icon(Icons.insert_drive_file, size: 24, color: Colors.white),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                                    child: Text(
+                                      name.length > 10 ? '${name.substring(0, 10)}...' : name,
+                                      style: const TextStyle(fontSize: 10),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                     ),
                   );
@@ -343,8 +623,16 @@ class _CommentsScreenState extends State<CommentsScreen> {
                 margin: const EdgeInsets.only(left: 32, top: 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: comment.replies!.map((reply) {
@@ -353,14 +641,31 @@ class _CommentsScreenState extends State<CommentsScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          CircleAvatar(
-                            radius: 12,
-                            backgroundColor: Colors.green.withAlpha((255 * 0.2).round()),
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFF4CAF50),
+                                  Color(0xFF388E3C),
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.green.withValues(alpha: 0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
                             child: Text(
                               reply.user?.name[0].toUpperCase() ?? 'U',
                               style: const TextStyle(
                                 fontSize: 10,
-                                color: Colors.green,
+                                color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -394,23 +699,33 @@ class _CommentsScreenState extends State<CommentsScreen> {
             ],
 
             // Bouton répondre
-            TextButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => CreateCommentScreen(
-                      projectId: comment.projectId,
-                      parentId: comment.id,
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.grey[50],
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: TextButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CreateCommentScreen(
+                        projectId: comment.projectId,
+                        parentId: comment.id,
+                      ),
                     ),
-                  ),
-                ).then((_) {
-                  commentProvider.loadComments();
-                });
-              },
-              icon: const Icon(Icons.reply, size: 16),
-              label: const Text('Répondre'),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ).then((_) {
+                    commentProvider.loadComments();
+                  });
+                },
+                icon: Icon(Icons.reply, size: 16, color: Colors.grey[700]),
+                label: Text(
+                  'Répondre',
+                  style: TextStyle(color: Colors.grey[700]),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
               ),
             ),
           ],
