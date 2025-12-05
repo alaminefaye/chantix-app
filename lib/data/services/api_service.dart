@@ -23,8 +23,11 @@ class ApiService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          if (_token != null) {
-            options.headers['Authorization'] = 'Bearer $_token';
+          // Toujours récupérer le token depuis StorageService pour s'assurer qu'il est à jour
+          final token = StorageService.getToken() ?? _token;
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+            _token = token; // Mettre à jour le token local aussi
           }
           return handler.next(options);
         },
@@ -97,7 +100,10 @@ class ApiService {
   }
 
   // Méthode générique pour les requêtes DELETE
-  Future<Response> delete(String endpoint) async {
+  Future<Response> delete(String endpoint, {Map<String, dynamic>? data}) async {
+    if (data != null) {
+      return await _dio.delete(endpoint, data: data);
+    }
     return await _dio.delete(endpoint);
   }
 

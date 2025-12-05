@@ -45,5 +45,15 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Cette application a besoin d'accéder à la caméra pour prendre des photos et enregistrer des vidéos de l'avancement des projets.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Cette application a besoin d'accéder à votre galerie photo pour sélectionner des images et vidéos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Cette application a besoin d'accéder à votre galerie photo pour sauvegarder des images.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Cette application a besoin d'accéder au microphone pour enregistrer des rapports audio.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Cette application a besoin de votre localisation pour enregistrer l'emplacement des mises à jour de projet.</string>
 </dict>
 </plist>

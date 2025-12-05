@@ -97,18 +97,29 @@ class AuthRepository {
         final responseData = response.data;
         final token = responseData['token'] ?? responseData['access_token'];
         final userData = responseData['user'] ?? responseData;
-
-        if (token != null) {
-          await StorageService.saveToken(token);
-          _apiService.setToken(token);
-          await StorageService.saveUserData(jsonEncode(userData));
-
+        
+        // Si pas de token, c'est normal pour un utilisateur non vérifié
+        // Le backend ne retourne pas de token si l'utilisateur n'est pas vérifié
+        if (token == null) {
+          // Ne pas sauvegarder de token ni de données utilisateur
+          // L'utilisateur devra attendre la validation avant de pouvoir se connecter
           return {
             'success': true,
             'user': UserModel.fromJson(userData),
-            'token': token,
+            'message': responseData['message'] ?? 'Votre compte est en attente de validation.',
           };
         }
+
+        // Si token présent, l'utilisateur est vérifié - sauvegarder et connecter
+        await StorageService.saveToken(token);
+        _apiService.setToken(token);
+        await StorageService.saveUserData(jsonEncode(userData));
+
+        return {
+          'success': true,
+          'user': UserModel.fromJson(userData),
+          'token': token,
+        };
       }
 
       // Gérer les erreurs de validation

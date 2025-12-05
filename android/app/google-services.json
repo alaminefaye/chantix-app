@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "627928621098",
+    "project_id": "chantix-1334d",
+    "storage_bucket": "chantix-1334d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:627928621098:android:f452958cda2f0c1ef2e353",
+        "android_client_info": {
+          "package_name": "com.chantix.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQut-teOlHdlFVgW27orCqY7BiktkZUFI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+

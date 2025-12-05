@@ -43,9 +43,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (mounted) {
         if (success) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const DashboardScreen()),
-          );
+          // S'assurer que l'utilisateur est bien chargé avant de naviguer
+          await authProvider.loadUser();
+          
+          if (mounted && authProvider.isAuthenticated) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const DashboardScreen()),
+            );
+          } else if (mounted) {
+            // Si l'authentification a échoué, afficher une erreur
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Erreur lors du chargement de votre profil'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 4),
+              ),
+            );
+          }
         } else {
           final errorMessage =
               authProvider.errorMessage ?? 'Erreur de connexion';

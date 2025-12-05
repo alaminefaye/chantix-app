@@ -63,12 +63,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             ),
             child: IconButton(
               icon: const Icon(Icons.add, color: Colors.white),
-              onPressed: () {
-                Navigator.of(context).push(
+              onPressed: () async {
+                await Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => const CreateProjectScreen(),
                   ),
                 );
+                // Recharger les projets après le retour
+                if (mounted) {
+                  Provider.of<ProjectProvider>(context, listen: false).loadProjects();
+                }
               },
             ),
           ),
@@ -166,12 +170,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                         ],
                       ),
                       child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
+                        onPressed: () async {
+                          await Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) => const CreateProjectScreen(),
                             ),
                           );
+                          // Recharger les projets après le retour
+                          if (mounted) {
+                            Provider.of<ProjectProvider>(context, listen: false).loadProjects();
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.transparent,

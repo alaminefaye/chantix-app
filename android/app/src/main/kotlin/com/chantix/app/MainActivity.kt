@@ -1,5 +1,6 @@
-package com.example.chantix_app
+package com.chantix.app
 
 import io.flutter.embedding.android.FlutterActivity
 
 class MainActivity : FlutterActivity()
+

@@ -9,13 +9,13 @@ part of 'progress_update_model.dart';
 ProgressUpdateModel _$ProgressUpdateModelFromJson(Map<String, dynamic> json) =>
     ProgressUpdateModel(
       id: (json['id'] as num).toInt(),
-      projectId: (json['project_id'] as num).toInt(),
-      userId: (json['user_id'] as num).toInt(),
-      progress: (json['progress'] as num).toInt(),
+      projectId: _intFromJson(json['project_id']),
+      userId: _intFromJson(json['user_id']),
+      progress: _intFromJson(json['progress']),
       description: json['description'] as String?,
       audioReport: json['audio_report'] as String?,
-      latitude: (json['latitude'] as num?)?.toDouble(),
-      longitude: (json['longitude'] as num?)?.toDouble(),
+      latitude: _doubleFromJson(json['latitude']),
+      longitude: _doubleFromJson(json['longitude']),
       photos:
           (json['photos'] as List<dynamic>?)?.map((e) => e as String).toList(),
       videos:

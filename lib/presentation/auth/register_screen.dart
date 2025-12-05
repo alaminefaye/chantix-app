@@ -77,9 +77,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (mounted) {
         if (success) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const DashboardScreen()),
-          );
+          // Vérifier si l'utilisateur est vérifié
+          final user = authProvider.user;
+          if (user != null && user.isVerified) {
+            // Utilisateur vérifié et token présent, naviguer vers le dashboard
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const DashboardScreen()),
+            );
+          } else {
+            // Utilisateur non vérifié - pas de token retourné par le backend
+            // Afficher un message et rediriger vers la page de connexion
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    'Votre compte a été créé avec succès. Il sera activé après validation par l\'administrateur. Vous recevrez un email une fois votre compte validé.',
+                  ),
+                  backgroundColor: Colors.orange,
+                  duration: const Duration(seconds: 6),
+                ),
+              );
+
+              // Rediriger vers la page de connexion après un court délai
+              await Future.delayed(const Duration(milliseconds: 500));
+
+              if (mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
+            }
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

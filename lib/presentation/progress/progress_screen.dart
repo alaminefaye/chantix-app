@@ -5,6 +5,7 @@ import '../projects/project_provider.dart';
 import 'progress_provider.dart';
 import 'create_progress_update_screen.dart';
 import 'progress_gallery_screen.dart';
+import 'progress_update_detail_screen.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -284,9 +285,21 @@ class _ProgressScreenState extends State<ProgressScreen> {
                                   ),
                                 ],
                               ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => ProgressUpdateDetailScreen(
+                                        update: update,
+                                        projectId: _selectedProject!.id,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(16),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
@@ -433,7 +446,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
                                   ],
                                 ),
                               ),
-                            );
+                            ),
+                          );
                           },
                         ),
                       );

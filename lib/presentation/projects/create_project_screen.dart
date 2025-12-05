@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'project_provider.dart';
-import 'projects_screen.dart';
 
 class CreateProjectScreen extends StatefulWidget {
   const CreateProjectScreen({super.key});
@@ -62,9 +61,11 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
 
       if (mounted) {
         if (success) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const ProjectsScreen()),
-          );
+          // Recharger les projets avant de naviguer
+          await projectProvider.loadProjects();
+          
+          Navigator.of(context).pop(); // Retourner à l'écran précédent
+          
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Projet créé avec succès'),

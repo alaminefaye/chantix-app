@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'config/firebase_options.dart';
 import 'data/services/storage_service.dart';
+import 'data/services/push_notification_service.dart';
 import 'presentation/auth/auth_provider.dart';
 import 'presentation/auth/splash_screen.dart';
 import 'presentation/projects/project_provider.dart';
@@ -14,11 +18,27 @@ import 'presentation/tasks/task_provider.dart';
 import 'presentation/comments/comment_provider.dart';
 import 'presentation/reports/report_provider.dart';
 
+// Handler pour les notifications en arrière-plan (doit être une fonction top-level)
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  await PushNotificationService.backgroundMessageHandler(message);
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialiser Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Configurer le handler pour les notifications en arrière-plan
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
   // Initialiser le stockage local
   await StorageService.init();
+
+  // Initialiser le service de notifications push
+  await PushNotificationService().initialize();
 
   runApp(const MyApp());
 }

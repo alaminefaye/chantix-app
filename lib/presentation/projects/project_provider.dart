@@ -22,10 +22,14 @@ class ProjectProvider with ChangeNotifier {
 
     try {
       _projects = await _repository.getProjects(filters: filters);
+      debugPrint('Projects loaded: ${_projects.length} projects');
       _isLoading = false;
+      _errorMessage = null;
       notifyListeners();
     } catch (e) {
+      debugPrint('Error loading projects: $e');
       _errorMessage = e.toString();
+      _projects = []; // S'assurer que la liste est vide en cas d'erreur
       _isLoading = false;
       notifyListeners();
     }

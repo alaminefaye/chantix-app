@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyCAs_TOLGd7WHZMU8JbwEJJiK99ClAVby8</string>
+	<key>GCM_SENDER_ID</key>
+	<string>627928621098</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.chantix.app</string>
+	<key>PROJECT_ID</key>
+	<string>chantix-1334d</string>
+	<key>STORAGE_BUCKET</key>
+	<string>chantix-1334d.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false/>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false/>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true/>
+	<key>IS_GCM_ENABLED</key>
+	<true/>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true/>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:627928621098:ios:fa4e1bc9c59acc32f2e353</string>
+</dict>
+</plist>
+

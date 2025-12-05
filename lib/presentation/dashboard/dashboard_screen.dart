@@ -80,8 +80,29 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<DashboardProvider>(context, listen: false).loadDashboardData();
+      _initializeDashboard();
     });
+  }
+
+  Future<void> _initializeDashboard() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    // S'assurer que l'utilisateur est bien chargé
+    if (!authProvider.isAuthenticated) {
+      await authProvider.loadUser();
+    }
+    
+    // Vérifier à nouveau après le chargement
+    if (authProvider.isAuthenticated && mounted) {
+      // Charger les données du dashboard seulement si authentifié
+      Provider.of<DashboardProvider>(context, listen: false).loadDashboardData();
+    } else if (mounted) {
+      // Si pas authentifié, rediriger vers la page de connexion
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
   }
 
   @override
@@ -114,54 +135,118 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
         actions: [
           // Bouton de notification animé
           _AnimatedNotificationButton(),
-          const SizedBox(width: 8),
-          Consumer<AuthProvider>(
-            builder: (context, authProvider, _) {
-              return PopupMenuButton(
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    child: const Row(
-                      children: [
-                        Icon(Icons.person),
-                        SizedBox(width: 8),
-                        Text('Profil'),
-                      ],
-                    ),
-                    onTap: () {
-                      // TODO: Naviguer vers le profil
-                    },
+        ],
+      ),
+      body: Consumer2<DashboardProvider, AuthProvider>(
+        builder: (context, dashboardProvider, authProvider, _) {
+          // Vérifier l'authentification
+          if (!authProvider.isAuthenticated) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Non authentifié',
+                    style: TextStyle(color: Colors.red, fontSize: 18),
                   ),
-                  PopupMenuItem(
-                    child: const Row(
-                      children: [
-                        Icon(Icons.logout, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Déconnexion', style: TextStyle(color: Colors.red)),
-                      ],
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        (route) => false,
+                      );
+                    },
+                    child: const Text('Se connecter'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Vérifier si l'utilisateur est vérifié
+          if (!authProvider.isVerified && !authProvider.user!.isSuperAdmin) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    size: 64,
+                    color: Colors.orange[400],
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Compte en attente de validation',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
-                    onTap: () async {
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      'Votre compte est en attente de validation par l\'administrateur. Vous recevrez un email une fois votre compte validé.',
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () async {
                       await authProvider.logout();
-                      if (context.mounted) {
+                      if (mounted) {
                         Navigator.of(context).pushAndRemoveUntil(
                           MaterialPageRoute(builder: (_) => const LoginScreen()),
                           (route) => false,
                         );
                       }
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFB41839),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                    ),
+                    child: const Text(
+                      'Se déconnecter',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
-              );
-            },
-          ),
-        ],
-      ),
-      body: Consumer<DashboardProvider>(
-        builder: (context, dashboardProvider, _) {
+              ),
+            );
+          }
+
           if (dashboardProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
           if (dashboardProvider.errorMessage != null) {
+            final errorMessage = dashboardProvider.errorMessage!.toLowerCase();
+            // Vérifier si c'est une erreur d'authentification
+            if (errorMessage.contains('unauth') || 
+                errorMessage.contains('non authentifié') ||
+                errorMessage.contains('token')) {
+              // Rediriger vers la page de connexion
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+                }
+              });
+              return const Center(child: CircularProgressIndicator());
+            }
+
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -169,6 +254,7 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
                   Text(
                     dashboardProvider.errorMessage!,
                     style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(

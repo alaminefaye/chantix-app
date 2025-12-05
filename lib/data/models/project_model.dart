@@ -11,7 +11,9 @@ class ProjectModel {
   final String name;
   final String? description;
   final String? address;
+  @JsonKey(fromJson: _doubleFromJson)
   final double? latitude;
+  @JsonKey(fromJson: _doubleFromJson)
   final double? longitude;
   @JsonKey(name: 'start_date')
   final String? startDate;
@@ -84,6 +86,16 @@ class ProjectModel {
       return parsed ?? 0;
     }
     return 0;
+  }
+
+  static double? _doubleFromJson(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      final parsed = double.tryParse(value);
+      return parsed;
+    }
+    return null;
   }
 
   String get statusLabel {

@@ -67,37 +67,106 @@ class _CreateProgressUpdateScreenState
     }
   }
 
+  Future<void> _handlePermissionDenied(String permissionName, PermissionStatus status) async {
+    if (!mounted) return;
+    
+    if (status.isPermanentlyDenied) {
+      final shouldOpen = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Permission requise'),
+          content: Text(
+            'La permission $permissionName est requise. '
+            'Voulez-vous ouvrir les paramètres pour l\'activer ?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Ouvrir les paramètres'),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldOpen == true && mounted) {
+        await openAppSettings();
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Permission $permissionName refusée'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _pickPhotos() async {
+    if (!mounted) return;
+    
     try {
-      final status = await Permission.photos.request();
-      if (status.isDenied && Platform.isAndroid) {
-        final cameraStatus = await Permission.camera.request();
-        if (cameraStatus.isDenied) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Permission refusée'),
-              ),
-            );
-          }
+      // Sur iOS, pas besoin de permission pour la galerie
+      // Sur Android, demander la permission
+      if (Platform.isAndroid) {
+        final status = await Permission.photos.request();
+        if (!status.isGranted) {
+          await _handlePermissionDenied('galerie', status);
           return;
         }
       }
 
-      final images = await _imagePicker.pickMultiImage(
-        imageQuality: 80,
-      );
+      // Utiliser pickMultiImage pour Android, pickImage pour iOS
+      List<XFile> selectedImages = [];
+      
+      if (Platform.isAndroid) {
+        // Android supporte la sélection multiple
+        try {
+          selectedImages = await _imagePicker.pickMultiImage(
+            imageQuality: 80,
+          );
+        } catch (e) {
+          debugPrint('Erreur pickMultiImage: $e');
+          // Fallback sur sélection simple
+          final singleImage = await _imagePicker.pickImage(
+            source: ImageSource.gallery,
+            imageQuality: 80,
+          );
+          if (singleImage != null) {
+            selectedImages = [singleImage];
+          }
+        }
+      } else {
+        // iOS - sélection simple
+        final image = await _imagePicker.pickImage(
+          source: ImageSource.gallery,
+          imageQuality: 80,
+        );
+        if (image != null) {
+          selectedImages = [image];
+        }
+      }
 
-      if (images.isNotEmpty) {
+      if (selectedImages.isNotEmpty && mounted) {
         setState(() {
-          _photos.addAll(images.map((image) => File(image.path)));
+          _photos.addAll(selectedImages.map((image) => File(image.path)));
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Erreur lors de la sélection de photos: $e');
+      debugPrint('Stack trace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
+            content: Text('Erreur lors de la sélection: ${e.toString().length > 100 ? e.toString().substring(0, 100) + '...' : e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -105,34 +174,41 @@ class _CreateProgressUpdateScreenState
   }
 
   Future<void> _takePhoto() async {
+    if (!mounted) return;
+    
     try {
+      // Vérifier et demander la permission caméra
       final status = await Permission.camera.request();
-      if (status.isDenied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Permission de caméra refusée'),
-            ),
-          );
-        }
+      
+      if (!status.isGranted) {
+        await _handlePermissionDenied('caméra', status);
         return;
       }
+
+      // Attendre un peu pour s'assurer que la permission est bien accordée
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      if (!mounted) return;
 
       final image = await _imagePicker.pickImage(
         source: ImageSource.camera,
         imageQuality: 80,
       );
 
-      if (image != null) {
+      if (image != null && mounted) {
         setState(() {
           _photos.add(File(image.path));
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Erreur lors de la prise de photo: $e');
+      debugPrint('Stack trace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
+            content: Text('Erreur lors de la prise de photo: ${e.toString().length > 100 ? e.toString().substring(0, 100) + '...' : e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -140,21 +216,40 @@ class _CreateProgressUpdateScreenState
   }
 
   Future<void> _pickVideos() async {
+    if (!mounted) return;
+    
     try {
+      // Sur iOS, pas besoin de permission pour la galerie
+      // Sur Android, demander la permission
+      if (Platform.isAndroid) {
+        final status = await Permission.photos.request();
+        if (!status.isGranted) {
+          await _handlePermissionDenied('galerie vidéo', status);
+          return;
+        }
+      }
+
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (!mounted) return;
+
       final video = await _imagePicker.pickVideo(
         source: ImageSource.gallery,
       );
 
-      if (video != null) {
+      if (video != null && mounted) {
         setState(() {
           _videos.add(File(video.path));
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Erreur lors de la sélection de vidéo: $e');
+      debugPrint('Stack trace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
+            content: Text('Erreur lors de la sélection de vidéo: ${e.toString().length > 100 ? e.toString().substring(0, 100) + '...' : e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -162,33 +257,44 @@ class _CreateProgressUpdateScreenState
   }
 
   Future<void> _recordVideo() async {
+    if (!mounted) return;
+    
     try {
-      final status = await Permission.camera.request();
-      if (status.isDenied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Permission de caméra refusée'),
-            ),
-          );
-        }
+      // Demander permission caméra
+      final cameraStatus = await Permission.camera.request();
+      if (!cameraStatus.isGranted) {
+        await _handlePermissionDenied('caméra', cameraStatus);
         return;
       }
+
+      // Demander permission microphone
+      final micStatus = await Permission.microphone.request();
+      if (!micStatus.isGranted) {
+        await _handlePermissionDenied('microphone', micStatus);
+        return;
+      }
+
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (!mounted) return;
 
       final video = await _imagePicker.pickVideo(
         source: ImageSource.camera,
       );
 
-      if (video != null) {
+      if (video != null && mounted) {
         setState(() {
           _videos.add(File(video.path));
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Erreur lors de l\'enregistrement vidéo: $e');
+      debugPrint('Stack trace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
+            content: Text('Erreur lors de l\'enregistrement: ${e.toString().length > 100 ? e.toString().substring(0, 100) + '...' : e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -196,13 +302,21 @@ class _CreateProgressUpdateScreenState
   }
 
   Future<void> _startRecording() async {
+    if (!mounted) return;
+    
     try {
       final status = await Permission.microphone.request();
-      if (status.isDenied) {
+      if (!status.isGranted) {
         if (mounted) {
+          String message = 'Permission de microphone refusée';
+          if (status.isPermanentlyDenied) {
+            message = 'Permission de microphone refusée définitivement. Veuillez l\'activer dans les paramètres.';
+          }
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Permission de microphone refusée'),
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 3),
             ),
           );
         }
@@ -218,16 +332,32 @@ class _CreateProgressUpdateScreenState
           path: path,
         );
 
-        setState(() {
-          _isRecording = true;
-          _audioFile = File(path);
-        });
+        if (mounted) {
+          setState(() {
+            _isRecording = true;
+            _audioFile = File(path);
+          });
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Permission de microphone non accordée par l\'enregistreur audio'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Erreur lors de l\'enregistrement audio: $e');
+      debugPrint('Stack trace: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
+            content: Text('Erreur lors de l\'enregistrement: ${e.toString().length > 100 ? e.toString().substring(0, 100) + '...' : e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }

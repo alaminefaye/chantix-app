@@ -2,6 +2,7 @@ import '../models/progress_update_model.dart';
 import '../services/api_service.dart';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 class ProgressRepository {
   final ApiService _apiService = ApiService();
@@ -32,9 +33,10 @@ class ProgressRepository {
   }) async {
     try {
       // Créer FormData pour l'upload de fichiers
+      // S'assurer que progress est un entier
       final formData = FormData.fromMap({
-        'progress': progress,
-        if (description != null) 'description': description,
+        'progress': progress, // Envoyer comme entier
+        if (description != null && description.isNotEmpty) 'description': description,
         if (latitude != null) 'latitude': latitude,
         if (longitude != null) 'longitude': longitude,
       });
@@ -92,23 +94,42 @@ class ProgressRepository {
       );
       
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = response.data;
-        return {
-          'success': true,
-          'progressUpdate': ProgressUpdateModel.fromJson(
-            data['data'] ?? data,
-          ),
-        };
+        final responseData = response.data;
+        debugPrint('Progress update response: $responseData');
+        
+        // Extraire les données de la réponse
+        final data = responseData['data'] ?? responseData;
+        debugPrint('Progress update data to parse: $data');
+        
+        try {
+          final progressUpdate = ProgressUpdateModel.fromJson(
+            data is Map<String, dynamic> ? data : Map<String, dynamic>.from(data),
+          );
+          return {
+            'success': true,
+            'progressUpdate': progressUpdate,
+          };
+        } catch (parseError, stackTrace) {
+          debugPrint('Erreur lors du parsing du ProgressUpdateModel: $parseError');
+          debugPrint('Stack trace: $stackTrace');
+          debugPrint('Données reçues: $data');
+          return {
+            'success': false,
+            'message': 'Erreur lors du parsing des données: ${parseError.toString()}',
+          };
+        }
       }
       
       return {
         'success': false,
         'message': response.data['message'] ?? 'Erreur lors de la création',
       };
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('Erreur lors de la création de la mise à jour: $e');
+      debugPrint('Stack trace: $stackTrace');
       return {
         'success': false,
-        'message': e.toString(),
+        'message': 'Erreur: ${e.toString()}',
       };
     }
   }

@@ -3,6 +3,7 @@ import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/services/storage_service.dart';
 import '../../data/services/api_service.dart';
+import '../../data/services/push_notification_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthRepository _authRepository = AuthRepository();
@@ -16,6 +17,7 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
+  bool get isVerified => _user?.isVerified ?? false;
 
   AuthProvider() {
     _initialize();
@@ -53,6 +55,25 @@ class AuthProvider with ChangeNotifier {
         _isLoading = false;
         _errorMessage = null;
         notifyListeners();
+        
+        // Vérifier que le token est bien sauvegardé
+        final token = StorageService.getToken();
+        print('🔑 Token d\'authentification sauvegardé: ${token?.substring(0, 20)}...');
+        
+        // Attendre un peu pour que le token FCM soit généré (surtout sur iOS)
+        // Sur iOS, le token APNS peut prendre 3-5 secondes
+        await Future.delayed(const Duration(seconds: 3));
+        
+        // Enregistrer le token FCM après la connexion
+        print('📱 Tentative d\'enregistrement du token FCM après connexion...');
+        await PushNotificationService().retryTokenRegistration();
+        
+        // Réessayer après 5 secondes supplémentaires si nécessaire (pour iOS)
+        Future.delayed(const Duration(seconds: 5), () async {
+          print('🔄 Réessai automatique de l\'enregistrement du token FCM...');
+          await PushNotificationService().retryTokenRegistration();
+        });
+        
         return true;
       } else {
         _errorMessage = result['message'] as String?;
