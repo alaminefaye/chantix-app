@@ -1,6 +1,5 @@
 import Flutter
 import UIKit
-import FirebaseCore
 import FirebaseMessaging
 
 @main
@@ -9,23 +8,15 @@ import FirebaseMessaging
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Initialiser Firebase
-    FirebaseApp.configure()
+    // Firebase est déjà initialisé par Flutter dans main.dart
+    // Pas besoin d'appeler FirebaseApp.configure() ici
     
     // Configurer les notifications push
     if #available(iOS 10.0, *) {
       UNUserNotificationCenter.current().delegate = self
-      let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
-      UNUserNotificationCenter.current().requestAuthorization(
-        options: authOptions,
-        completionHandler: { _, _ in }
-      )
-    } else {
-      let settings: UIUserNotificationSettings =
-        UIUserNotificationSettings(types: [.alert, .badge, .sound], categories: nil)
-      application.registerUserNotificationSettings(settings)
     }
     
+    // Enregistrer pour les notifications distantes
     application.registerForRemoteNotifications()
     
     // Configurer Firebase Messaging
