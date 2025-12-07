@@ -42,10 +42,11 @@ class AttendanceRepository {
           ),
       });
 
-      final response = await _apiService.postFormData(
-        '/v1/projects/$projectId/attendances/check-in',
-        formData,
-      );
+      final endpoint = '/v1/projects/$projectId/attendances/check-in';
+      print('🔵 DEBUG: Check-in URL: $endpoint');
+      print('🔵 DEBUG: Project ID: $projectId');
+
+      final response = await _apiService.postFormData(endpoint, formData);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data;
