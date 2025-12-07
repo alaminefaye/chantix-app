@@ -30,17 +30,60 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Future<void> _loadProjects() async {
-    final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
+    final projectProvider = Provider.of<ProjectProvider>(
+      context,
+      listen: false,
+    );
     if (projectProvider.projects.isEmpty) {
       await projectProvider.loadProjects();
     }
+
+    // Auto-sélectionner un projet si aucun n'est sélectionné
+    if (_selectedProject == null && projectProvider.projects.isNotEmpty) {
+      _autoSelectProject(projectProvider.projects);
+    }
+  }
+
+  void _autoSelectProject(List<ProjectModel> projects) {
+    if (projects.isEmpty) return;
+
+    // Si un seul projet, le sélectionner automatiquement
+    if (projects.length == 1) {
+      setState(() {
+        _selectedProject = projects.first;
+      });
+      _loadCurrentAttendance();
+      return;
+    }
+
+    // Si plusieurs projets, chercher le premier projet "en_cours" (en cours)
+    final inProgressProjects = projects
+        .where((p) => p.status == 'en_cours')
+        .toList();
+
+    if (inProgressProjects.isNotEmpty) {
+      // Sélectionner le premier projet en cours
+      setState(() {
+        _selectedProject = inProgressProjects.first;
+      });
+      _loadCurrentAttendance();
+      return;
+    }
+
+    // Si aucun projet en cours, sélectionner le premier projet disponible
+    setState(() {
+      _selectedProject = projects.first;
+    });
+    _loadCurrentAttendance();
   }
 
   Future<void> _loadCurrentAttendance() async {
     if (_selectedProject == null) return;
 
-    final attendanceProvider =
-        Provider.of<AttendanceProvider>(context, listen: false);
+    final attendanceProvider = Provider.of<AttendanceProvider>(
+      context,
+      listen: false,
+    );
     await attendanceProvider.loadAttendances(_selectedProject!.id);
 
     // Trouver le pointage actuel (check-in sans check-out)
@@ -146,6 +189,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   );
                 }
 
+                // Auto-sélectionner un projet si aucun n'est sélectionné
+                if (_selectedProject == null) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _autoSelectProject(projectProvider.projects);
+                  });
+                }
+
                 return Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
@@ -173,23 +223,24 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           gradient: const LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFFB41839),
-                              Color(0xFF3F1B3D),
-                            ],
+                            colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                           ),
                         ),
-                        child: const Icon(Icons.construction, color: Colors.white, size: 20),
+                        child: const Icon(
+                          Icons.construction,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                       filled: true,
                       fillColor: Colors.white,
                     ),
-                  items: projectProvider.projects.map((project) {
-                    return DropdownMenuItem<ProjectModel>(
-                      value: project,
-                      child: Text(project.name),
-                    );
-                  }).toList(),
+                    items: projectProvider.projects.map((project) {
+                      return DropdownMenuItem<ProjectModel>(
+                        value: project,
+                        child: Text(project.name),
+                      );
+                    }).toList(),
                     onChanged: (project) {
                       setState(() {
                         _selectedProject = project;
@@ -209,10 +260,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ? const Center(
                     child: Text(
                       'Veuillez sélectionner un projet',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   )
                 : _buildAttendanceContent(),
@@ -227,13 +275,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final userId = authProvider.user?.id;
 
     if (userId == null) {
-      return const Center(
-        child: Text('Utilisateur non connecté'),
-      );
+      return const Center(child: Text('Utilisateur non connecté'));
     }
 
     // Vérifier si l'utilisateur a déjà fait un check-in aujourd'hui
-    final hasCheckedIn = _currentAttendance != null &&
+    final hasCheckedIn =
+        _currentAttendance != null &&
         _currentAttendance!.checkInTime != null &&
         _currentAttendance!.checkOutTime == null;
 
@@ -274,20 +321,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           gradient: const LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFFB41839),
-                              Color(0xFF3F1B3D),
-                            ],
+                            colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFB41839).withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFFB41839,
+                              ).withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
                           ],
                         ),
-                        child: const Icon(Icons.construction, color: Colors.white, size: 22),
+                        child: const Icon(
+                          Icons.construction,
+                          color: Colors.white,
+                          size: 22,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -305,7 +355,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                        const Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -334,10 +388,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Colors.blue[50]!,
-                    Colors.blue[100]!,
-                  ],
+                  colors: [Colors.blue[50]!, Colors.blue[100]!],
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -358,10 +409,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFF2196F3),
-                            Color(0xFF1976D2),
-                          ],
+                          colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -390,10 +438,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       const SizedBox(height: 8),
                       Text(
                         'Check-in: ${_formatTime(_currentAttendance!.checkInTime!)}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                       ),
                     ],
                   ],
@@ -411,10 +456,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF4CAF50),
-                    Color(0xFF388E3C),
-                  ],
+                  colors: [Color(0xFF4CAF50), Color(0xFF388E3C)],
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -449,10 +491,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFF44336),
-                    Color(0xFFD32F2F),
-                  ],
+                  colors: [Color(0xFFF44336), Color(0xFFD32F2F)],
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -538,10 +577,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 children: [
                   const Text(
                     'Historique récent',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Consumer<AttendanceProvider>(
@@ -575,8 +611,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           final color = attendance.isAbsence
                               ? Colors.orange
                               : attendance.checkOutTime != null
-                                  ? Colors.green
-                                  : Colors.blue;
+                              ? Colors.green
+                              : Colors.blue;
                           return Container(
                             margin: const EdgeInsets.only(bottom: 8),
                             decoration: BoxDecoration(
@@ -608,23 +644,26 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                   attendance.isAbsence
                                       ? Icons.cancel
                                       : attendance.checkOutTime != null
-                                          ? Icons.check
-                                          : Icons.access_time,
+                                      ? Icons.check
+                                      : Icons.access_time,
                                   color: Colors.white,
                                   size: 20,
                                 ),
                               ),
-                            title: Text(
-                              attendance.isAbsence
-                                  ? 'Absence'
-                                  : '${_formatTime(attendance.checkInTime ?? '')} - ${attendance.checkOutTime != null ? _formatTime(attendance.checkOutTime!) : 'En cours'}',
-                            ),
-                            subtitle: Text(
-                              attendance.isAbsence
-                                  ? attendance.absenceReason ?? ''
-                                  : '${attendance.hoursWorked?.toStringAsFixed(1) ?? '0'} heures',
-                            ),
-                              trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                              title: Text(
+                                attendance.isAbsence
+                                    ? 'Absence'
+                                    : '${_formatTime(attendance.checkInTime ?? '')} - ${attendance.checkOutTime != null ? _formatTime(attendance.checkOutTime!) : 'En cours'}',
+                              ),
+                              subtitle: Text(
+                                attendance.isAbsence
+                                    ? attendance.absenceReason ?? ''
+                                    : '${attendance.hoursWorked?.toStringAsFixed(1) ?? '0'} heures',
+                              ),
+                              trailing: Icon(
+                                Icons.chevron_right,
+                                color: Colors.grey[400],
+                              ),
                               onTap: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
@@ -703,4 +742,3 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 }
-

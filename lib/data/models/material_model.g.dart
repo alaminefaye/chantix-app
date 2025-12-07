@@ -8,8 +8,8 @@ part of 'material_model.dart';
 
 MaterialModel _$MaterialModelFromJson(Map<String, dynamic> json) =>
     MaterialModel(
-      id: (json['id'] as num).toInt(),
-      companyId: (json['company_id'] as num).toInt(),
+      id: MaterialModel._intFromJson(json['id']),
+      companyId: MaterialModel._intFromJson(json['company_id']),
       name: json['name'] as String,
       description: json['description'] as String?,
       category: json['category'] as String?,

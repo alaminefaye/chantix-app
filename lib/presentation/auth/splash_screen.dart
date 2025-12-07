@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'auth_provider.dart';
 import 'welcome_screen.dart';
 import '../dashboard/dashboard_screen.dart';
+import '../../data/services/permission_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -20,27 +21,19 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
-    
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeIn,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.5,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutBack,
-    ));
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
+    );
 
     _animationController.forward();
 
@@ -56,6 +49,15 @@ class _SplashScreenState extends State<SplashScreen>
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     await authProvider.loadUser();
+
+    if (!mounted) return;
+
+    // Si l'utilisateur est authentifié, demander toutes les permissions au démarrage
+    if (authProvider.isAuthenticated) {
+      // Demander toutes les permissions nécessaires
+      // Cela affichera les popups natives iOS automatiquement
+      await PermissionService.requestAllPermissions();
+    }
 
     if (!mounted) return;
 
@@ -118,7 +120,7 @@ class _SplashScreenState extends State<SplashScreen>
                       },
                     ),
                     const SizedBox(height: 30),
-                    
+
                     // Nom de l'application
                     const Text(
                       'CHANTIX',
@@ -130,7 +132,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // Indicateur de chargement
                     const SizedBox(
                       width: 40,
@@ -150,4 +152,3 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 }
-

@@ -36,6 +36,9 @@ dependencies:
   file_picker: ^6.1.1
   cached_network_image: ^3.3.1
   record: ^6.1.2
+  video_player: ^2.8.2
+  chewie: ^1.7.4
+  just_audio: ^0.9.36
 
   # Géolocalisation
   geolocator: ^10.1.0
@@ -53,6 +56,9 @@ dependencies:
   
   # Graphiques
   fl_chart: ^0.66.0
+  
+  # Dates
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:
@@ -61,9 +67,20 @@ dev_dependencies:
   build_runner: ^2.4.7
   json_serializable: ^6.7.1
   retrofit_generator: ^8.0.6
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
   
   assets:
     - assets/images/
+
+# Configuration pour générer les icônes de l'application
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/icon.png"
+  min_sdk_android: 21 # Android minimum SDK
+  adaptive_icon_background: "#B41839" # Couleur de fond pour Android (rouge de votre app)
+  adaptive_icon_foreground: "assets/images/icon.png"
+  remove_alpha_ios: true # Supprime le canal alpha pour iOS (requis par Apple)

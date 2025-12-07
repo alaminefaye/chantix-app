@@ -5,6 +5,7 @@ import '../../data/models/expense_model.dart';
 import '../../data/models/project_model.dart';
 import '../projects/project_provider.dart';
 import 'create_expense_screen.dart';
+import 'expense_detail_screen.dart';
 
 class ExpensesScreen extends StatefulWidget {
   const ExpensesScreen({super.key});
@@ -20,13 +21,19 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
-      final expenseProvider = Provider.of<ExpenseProvider>(context, listen: false);
-      
+      final projectProvider = Provider.of<ProjectProvider>(
+        context,
+        listen: false,
+      );
+      final expenseProvider = Provider.of<ExpenseProvider>(
+        context,
+        listen: false,
+      );
+
       if (projectProvider.projects.isEmpty) {
         projectProvider.loadProjects();
       }
-      
+
       expenseProvider.loadExpenses();
     });
   }
@@ -95,15 +102,17 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
               return IconButton(
                 icon: const Icon(Icons.add),
                 onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => CreateExpenseScreen(
-                        projectId: expenseProvider.selectedProjectId!,
-                      ),
-                    ),
-                  ).then((_) {
-                    expenseProvider.loadExpenses();
-                  });
+                  Navigator.of(context)
+                      .push(
+                        MaterialPageRoute(
+                          builder: (_) => CreateExpenseScreen(
+                            projectId: expenseProvider.selectedProjectId!,
+                          ),
+                        ),
+                      )
+                      .then((_) {
+                        expenseProvider.loadExpenses();
+                      });
                 },
               );
             },
@@ -163,23 +172,24 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                               gradient: const LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFFB41839),
-                                  Color(0xFF3F1B3D),
-                                ],
+                                colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                               ),
                             ),
-                            child: const Icon(Icons.construction, color: Colors.white, size: 20),
+                            child: const Icon(
+                              Icons.construction,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.white,
                         ),
-                      items: projectProvider.projects.map((project) {
-                        return DropdownMenuItem<ProjectModel>(
-                          value: project,
-                          child: Text(project.name),
-                        );
-                      }).toList(),
+                        items: projectProvider.projects.map((project) {
+                          return DropdownMenuItem<ProjectModel>(
+                            value: project,
+                            child: Text(project.name),
+                          );
+                        }).toList(),
                         onChanged: (project) {
                           expenseProvider.setSelectedProject(project?.id);
                           expenseProvider.loadExpenses();
@@ -271,10 +281,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Colors.grey[300]!,
-                                Colors.grey[400]!,
-                              ],
+                              colors: [Colors.grey[300]!, Colors.grey[400]!],
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -320,10 +327,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Colors.red[300]!,
-                                Colors.red[400]!,
-                              ],
+                              colors: [Colors.red[300]!, Colors.red[400]!],
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -358,14 +362,13 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                             gradient: const LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Color(0xFFB41839),
-                                Color(0xFF3F1B3D),
-                              ],
+                              colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFB41839).withValues(alpha: 0.4),
+                                color: const Color(
+                                  0xFFB41839,
+                                ).withValues(alpha: 0.4),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -402,8 +405,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   );
                 }
 
-                final filteredExpenses =
-                    _getFilteredExpenses(expenseProvider.expenses);
+                final filteredExpenses = _getFilteredExpenses(
+                  expenseProvider.expenses,
+                );
 
                 if (filteredExpenses.isEmpty) {
                   return Center(
@@ -417,10 +421,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Colors.grey[300]!,
-                                Colors.grey[400]!,
-                              ],
+                              colors: [Colors.grey[300]!, Colors.grey[400]!],
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -458,7 +459,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     itemBuilder: (context, index) {
                       final expense = filteredExpenses[index];
                       final typeColor = _getTypeColor(expense.type);
-                      
+
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
@@ -479,6 +480,14 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(16),
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    ExpenseDetailScreen(expenseId: expense.id),
+                              ),
+                            );
+                          },
                           leading: Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
@@ -524,7 +533,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: typeColor.withAlpha((255 * 0.1).round()),
+                                      color: typeColor.withAlpha(
+                                        (255 * 0.1).round(),
+                                      ),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
@@ -544,7 +555,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                                         vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.green.withAlpha((255 * 0.1).round()),
+                                        color: Colors.green.withAlpha(
+                                          (255 * 0.1).round(),
+                                        ),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: const Text(
@@ -638,10 +651,7 @@ class _FilterChip3D extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFFB41839),
-                Color(0xFF3F1B3D),
-              ],
+              colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
             ),
             boxShadow: [
               BoxShadow(
@@ -655,11 +665,7 @@ class _FilterChip3D extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.check_circle,
-                size: 16,
-                color: Colors.white,
-              ),
+              const Icon(Icons.check_circle, size: 16, color: Colors.white),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(
@@ -711,4 +717,3 @@ class _FilterChip3D extends StatelessWidget {
     }
   }
 }
-

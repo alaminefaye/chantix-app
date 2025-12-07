@@ -1,6 +1,6 @@
 {
-    "name": "chantix_app",
-    "short_name": "chantix_app",
+    "name": "Chantix",
+    "short_name": "Chantix",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

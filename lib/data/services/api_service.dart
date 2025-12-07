@@ -120,6 +120,19 @@ class ApiService {
     );
   }
 
+  // Méthode pour les requêtes PUT avec FormData (upload de fichiers)
+  Future<Response> putFormData(String endpoint, FormData formData) async {
+    return await _dio.put(
+      endpoint,
+      data: formData,
+      options: Options(
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      ),
+    );
+  }
+
   // Getter pour accéder à Dio si nécessaire
   Dio get dio => _dio;
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'comment_provider.dart';
@@ -16,6 +17,8 @@ class CommentsScreen extends StatefulWidget {
 }
 
 class _CommentsScreenState extends State<CommentsScreen> {
+  Timer? _refreshTimer;
+
   @override
   void initState() {
     super.initState();
@@ -30,7 +33,20 @@ class _CommentsScreenState extends State<CommentsScreen> {
       if (commentProvider.selectedProjectId != null) {
         commentProvider.loadComments();
       }
+
+      // Rafraîchir automatiquement toutes les 10 secondes pour voir les nouvelles réponses
+      _refreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+        if (commentProvider.selectedProjectId != null && mounted) {
+          commentProvider.loadComments();
+        }
+      });
     });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -416,6 +432,15 @@ class _CommentsScreenState extends State<CommentsScreen> {
                     itemCount: commentProvider.comments.length,
                     itemBuilder: (context, index) {
                       final comment = commentProvider.comments[index];
+                      // Debug: vérifier les réponses
+                      if (comment.replies != null) {
+                        print('Comment ${comment.id} has ${comment.replies!.length} replies');
+                        for (var reply in comment.replies!) {
+                          print('  - Reply ${reply.id}: ${reply.content} by ${reply.user?.name ?? "Unknown"}');
+                        }
+                      } else {
+                        print('Comment ${comment.id} has null replies');
+                      }
                       return _buildCommentCard(context, comment, commentProvider);
                     },
                   ),
@@ -617,6 +642,25 @@ class _CommentsScreenState extends State<CommentsScreen> {
               const SizedBox(height: 12),
             ],
 
+            // Réponses - Afficher un indicateur de debug si les réponses sont null
+            if (comment.replies == null) ...[
+              Padding(
+                padding: const EdgeInsets.only(left: 32, top: 8),
+                child: Text(
+                  'Debug: replies is null',
+                  style: TextStyle(fontSize: 10, color: Colors.red),
+                ),
+              ),
+            ] else if (comment.replies!.isEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.only(left: 32, top: 8),
+                child: Text(
+                  'Debug: replies is empty',
+                  style: TextStyle(fontSize: 10, color: Colors.orange),
+                ),
+              ),
+            ],
+            
             // Réponses
             if (comment.replies != null && comment.replies!.isNotEmpty) ...[
               Container(
@@ -686,6 +730,17 @@ class _CommentsScreenState extends State<CommentsScreen> {
                                   reply.content,
                                   style: const TextStyle(fontSize: 12),
                                 ),
+                                if (reply.createdAt != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      _formatDate(reply.createdAt!),
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey[500],
+                                      ),
+                                    ),
+                                  ),
                               ],
                             ),
                           ),

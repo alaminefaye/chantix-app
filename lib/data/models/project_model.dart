@@ -36,7 +36,7 @@ class ProjectModel {
   final String? createdAt;
   @JsonKey(name: 'updated_at')
   final String? updatedAt;
-  
+
   // Relations
   final UserModel? creator;
   final CompanyModel? company;
@@ -112,5 +112,13 @@ class ProjectModel {
         return status;
     }
   }
-}
 
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ProjectModel && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
+}

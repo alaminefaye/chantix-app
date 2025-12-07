@@ -8,10 +8,11 @@ part 'expense_model.g.dart';
 
 @JsonSerializable()
 class ExpenseModel {
+  @JsonKey(fromJson: _intFromJson)
   final int id;
-  @JsonKey(name: 'project_id')
+  @JsonKey(name: 'project_id', fromJson: _intFromJson)
   final int projectId;
-  @JsonKey(name: 'created_by')
+  @JsonKey(name: 'created_by', fromJson: _intFromJson)
   final int createdBy;
   final String type;
   final String title;
@@ -27,9 +28,9 @@ class ExpenseModel {
   final String? invoiceDate;
   @JsonKey(name: 'invoice_file')
   final String? invoiceFile;
-  @JsonKey(name: 'material_id')
+  @JsonKey(name: 'material_id', fromJson: _intFromJsonNullable)
   final int? materialId;
-  @JsonKey(name: 'employee_id')
+  @JsonKey(name: 'employee_id', fromJson: _intFromJsonNullable)
   final int? employeeId;
   final String? notes;
   @JsonKey(name: 'is_paid')
@@ -86,6 +87,28 @@ class ExpenseModel {
       return parsed ?? 0.0;
     }
     return 0.0;
+  }
+
+  static int _intFromJson(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      return parsed ?? 0;
+    }
+    return 0;
+  }
+
+  static int? _intFromJsonNullable(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      return parsed;
+    }
+    return null;
   }
 
   String get typeLabel {

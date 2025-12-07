@@ -17,6 +17,7 @@ import 'presentation/expenses/expense_provider.dart';
 import 'presentation/tasks/task_provider.dart';
 import 'presentation/comments/comment_provider.dart';
 import 'presentation/reports/report_provider.dart';
+import 'presentation/notifications/notification_provider.dart';
 
 // Handler pour les notifications en arrière-plan (doit être une fonction top-level)
 @pragma('vm:entry-point')
@@ -61,6 +62,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TaskProvider()),
         ChangeNotifierProvider(create: (_) => CommentProvider()),
         ChangeNotifierProvider(create: (_) => ReportProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: MaterialApp(
         title: 'Chantix',

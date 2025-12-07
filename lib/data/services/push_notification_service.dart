@@ -18,8 +18,65 @@ class PushNotificationService {
 
   // Handler pour les notifications en arrière-plan
   static Future<void> backgroundMessageHandler(RemoteMessage message) async {
-    print('Handling background message: ${message.messageId}');
-    // Vous pouvez traiter la notification en arrière-plan ici
+    print('📬 Handling background message: ${message.messageId}');
+    print('   Title: ${message.notification?.title}');
+    print('   Body: ${message.notification?.body}');
+    print('   Data: ${message.data}');
+    
+    // Initialiser les notifications locales pour afficher la notification
+    try {
+      await StorageService.init();
+      
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'chantix_notifications',
+        'Chantix Notifications',
+        channelDescription: 'Notifications pour les mises à jour de projets',
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        icon: '@drawable/ic_notification',
+      );
+
+      const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+
+      const NotificationDetails details = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+
+      final FlutterLocalNotificationsPlugin localNotifications = FlutterLocalNotificationsPlugin();
+      
+      // Initialiser si pas déjà fait
+      const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@drawable/ic_notification');
+      const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
+      const InitializationSettings initSettings = InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      );
+      
+      await localNotifications.initialize(initSettings);
+      
+      // Afficher la notification locale
+      await localNotifications.show(
+        message.hashCode,
+        message.notification?.title ?? 'Notification',
+        message.notification?.body ?? '',
+        details,
+        payload: message.data.toString(),
+      );
+      
+      print('✅ Background notification displayed');
+    } catch (e) {
+      print('❌ Error displaying background notification: $e');
+    }
   }
 
   /// Initialiser le service de notifications push
@@ -107,7 +164,7 @@ class PushNotificationService {
 
   /// Initialiser les notifications locales
   Future<void> _initializeLocalNotifications() async {
-    const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@drawable/ic_notification');
     const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -267,18 +324,24 @@ class PushNotificationService {
 
   /// Gérer les notifications en premier plan
   void _handleForegroundMessage(RemoteMessage message) {
-    print('Received foreground message: ${message.messageId}');
+    print('📬 Received foreground message: ${message.messageId}');
+    print('   Title: ${message.notification?.title}');
+    print('   Body: ${message.notification?.body}');
+    print('   Data: ${message.data}');
     
     final notification = message.notification;
     final data = message.data;
 
     if (notification != null) {
+      print('✅ Displaying local notification');
       _showLocalNotification(
         id: message.hashCode,
         title: notification.title ?? 'Notification',
         body: notification.body ?? '',
         payload: data.toString(),
       );
+    } else {
+      print('⚠️ No notification object in message');
     }
   }
 
@@ -325,6 +388,7 @@ class PushNotificationService {
       importance: Importance.high,
       priority: Priority.high,
       showWhen: true,
+      icon: '@drawable/ic_notification',
     );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(

@@ -4,8 +4,9 @@ part 'material_model.g.dart';
 
 @JsonSerializable()
 class MaterialModel {
+  @JsonKey(fromJson: _intFromJson)
   final int id;
-  @JsonKey(name: 'company_id')
+  @JsonKey(name: 'company_id', fromJson: _intFromJson)
   final int companyId;
   final String name;
   final String? description;
@@ -49,6 +50,17 @@ class MaterialModel {
   Map<String, dynamic> toJson() => _$MaterialModelToJson(this);
 
   // Helper functions for safe parsing
+  static int _intFromJson(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      return parsed ?? 0;
+    }
+    return 0;
+  }
+
   static double? _priceFromJson(dynamic value) {
     if (value == null) return null;
     if (value is double) return value;

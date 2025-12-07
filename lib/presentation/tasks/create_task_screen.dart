@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'task_provider.dart';
 import '../employees/employee_provider.dart';
+import '../../data/models/task_model.dart';
 
 class CreateTaskScreen extends StatefulWidget {
   final int projectId;
+  final TaskModel? task;
 
-  const CreateTaskScreen({super.key, required this.projectId});
+  const CreateTaskScreen({super.key, required this.projectId, this.task});
 
   @override
   State<CreateTaskScreen> createState() => _CreateTaskScreenState();
@@ -18,7 +20,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   final _descriptionController = TextEditingController();
   final _categoryController = TextEditingController();
   final _notesController = TextEditingController();
-  
+
   String _status = 'a_faire';
   String _priority = 'moyenne';
   DateTime? _startDate;
@@ -55,8 +57,40 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   @override
   void initState() {
     super.initState();
+    // Initialize with task data if editing
+    if (widget.task != null) {
+      final task = widget.task!;
+      _titleController.text = task.title;
+      _descriptionController.text = task.description ?? '';
+      _categoryController.text = task.category ?? '';
+      _status = task.status;
+      _priority = task.priority;
+      _progress = task.progress;
+      _selectedEmployeeId = task.assignedTo;
+      _notesController.text = task.notes ?? '';
+
+      if (task.startDate != null) {
+        try {
+          _startDate = DateTime.parse(task.startDate!);
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+
+      if (task.deadline != null) {
+        try {
+          _deadline = DateTime.parse(task.deadline!);
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final employeeProvider = Provider.of<EmployeeProvider>(context, listen: false);
+      final employeeProvider = Provider.of<EmployeeProvider>(
+        context,
+        listen: false,
+      );
       if (employeeProvider.employees.isEmpty) {
         employeeProvider.loadEmployees();
       }
@@ -75,7 +109,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isStartDate 
+      initialDate: isStartDate
           ? (_startDate ?? DateTime.now())
           : (_deadline ?? DateTime.now().add(const Duration(days: 7))),
       firstDate: DateTime.now(),
@@ -131,15 +165,30 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
           : _notesController.text.trim(),
     };
 
-    final success = await taskProvider.createTask(
-      projectId: widget.projectId,
-      data: data,
-    );
+    final bool success;
+    if (widget.task != null) {
+      // Update existing task
+      success = await taskProvider.updateTask(
+        id: widget.task!.id,
+        projectId: widget.projectId,
+        data: data,
+      );
+    } else {
+      // Create new task
+      success = await taskProvider.createTask(
+        projectId: widget.projectId,
+        data: data,
+      );
+    }
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tâche créée avec succès'),
+        SnackBar(
+          content: Text(
+            widget.task != null
+                ? 'Tâche mise à jour avec succès'
+                : 'Tâche créée avec succès',
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -148,7 +197,10 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            taskProvider.errorMessage ?? 'Erreur lors de la création',
+            taskProvider.errorMessage ??
+                (widget.task != null
+                    ? 'Erreur lors de la mise à jour'
+                    : 'Erreur lors de la création'),
           ),
           backgroundColor: Colors.red,
         ),
@@ -174,9 +226,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
             ),
           ),
         ),
-        title: const Text(
-          'Nouvelle tâche',
-          style: TextStyle(
+        title: Text(
+          widget.task != null ? 'Modifier la tâche' : 'Nouvelle tâche',
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 24,
@@ -218,7 +270,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
 
               // Catégorie
               _DropdownField3D(
-                value: _categoryController.text.isEmpty ? null : _categoryController.text,
+                value: _categoryController.text.isEmpty
+                    ? null
+                    : _categoryController.text,
                 label: 'Catégorie',
                 icon: Icons.category,
                 items: [
@@ -302,7 +356,10 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     label: 'Assigner à',
                     icon: Icons.person,
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('Non assigné')),
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Non assigné'),
+                      ),
                       ...employeeProvider.employees.map((employee) {
                         return DropdownMenuItem(
                           value: employee.id.toString(),
@@ -312,7 +369,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     ],
                     onChanged: (value) {
                       setState(() {
-                        _selectedEmployeeId = value != null ? int.tryParse(value) : null;
+                        _selectedEmployeeId = value != null
+                            ? int.tryParse(value)
+                            : null;
                       });
                     },
                   );
@@ -346,13 +405,14 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Colors.grey[300]!,
-                                Colors.grey[400]!,
-                              ],
+                              colors: [Colors.grey[300]!, Colors.grey[400]!],
                             ),
                           ),
-                          child: const Icon(Icons.trending_up, color: Colors.white, size: 20),
+                          child: const Icon(
+                            Icons.trending_up,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Text(
@@ -400,10 +460,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFFB41839),
-                      Color(0xFF3F1B3D),
-                    ],
+                    colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -423,9 +480,11 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: const Text(
-                    'CRÉER LA TÂCHE',
-                    style: TextStyle(
+                  child: Text(
+                    widget.task != null
+                        ? 'MODIFIER LA TÂCHE'
+                        : 'CRÉER LA TÂCHE',
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -473,7 +532,7 @@ class _FormField3DState extends State<_FormField3D> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _isFocused 
+            color: _isFocused
                 ? const Color(0xFFB41839).withValues(alpha: 0.2)
                 : Colors.black.withValues(alpha: 0.06),
             blurRadius: _isFocused ? 15 : 10,
@@ -511,18 +570,12 @@ class _FormField3DState extends State<_FormField3D> {
                   ? const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFFB41839),
-                        Color(0xFF3F1B3D),
-                      ],
+                      colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                     )
                   : LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        Colors.grey[300]!,
-                        Colors.grey[400]!,
-                      ],
+                      colors: [Colors.grey[300]!, Colors.grey[400]!],
                     ),
               boxShadow: [
                 BoxShadow(
@@ -534,13 +587,12 @@ class _FormField3DState extends State<_FormField3D> {
                 ),
               ],
             ),
-            child: Icon(
-              widget.icon,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: Icon(widget.icon, color: Colors.white, size: 20),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -551,10 +603,7 @@ class _FormField3DState extends State<_FormField3D> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-              color: Color(0xFFB41839),
-              width: 2,
-            ),
+            borderSide: const BorderSide(color: Color(0xFFB41839), width: 2),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
@@ -604,7 +653,7 @@ class _DropdownField3DState extends State<_DropdownField3D> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _isFocused 
+            color: _isFocused
                 ? const Color(0xFFB41839).withValues(alpha: 0.2)
                 : Colors.black.withValues(alpha: 0.06),
             blurRadius: _isFocused ? 15 : 10,
@@ -628,18 +677,12 @@ class _DropdownField3DState extends State<_DropdownField3D> {
                   ? const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFFB41839),
-                        Color(0xFF3F1B3D),
-                      ],
+                      colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                     )
                   : LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        Colors.grey[300]!,
-                        Colors.grey[400]!,
-                      ],
+                      colors: [Colors.grey[300]!, Colors.grey[400]!],
                     ),
               boxShadow: [
                 BoxShadow(
@@ -651,13 +694,12 @@ class _DropdownField3DState extends State<_DropdownField3D> {
                 ),
               ],
             ),
-            child: Icon(
-              widget.icon,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: Icon(widget.icon, color: Colors.white, size: 20),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -668,10 +710,7 @@ class _DropdownField3DState extends State<_DropdownField3D> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-              color: Color(0xFFB41839),
-              width: 2,
-            ),
+            borderSide: const BorderSide(color: Color(0xFFB41839), width: 2),
           ),
           labelStyle: TextStyle(
             color: _isFocused ? const Color(0xFFB41839) : Colors.grey[600],
@@ -732,7 +771,7 @@ class _DateField3DState extends State<_DateField3D> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: _isFocused 
+              color: _isFocused
                   ? const Color(0xFFB41839).withValues(alpha: 0.2)
                   : Colors.black.withValues(alpha: 0.06),
               blurRadius: _isFocused ? 15 : 10,
@@ -746,9 +785,7 @@ class _DateField3DState extends State<_DateField3D> {
             borderRadius: BorderRadius.circular(16),
             color: Colors.white,
             border: Border.all(
-              color: _isFocused 
-                  ? const Color(0xFFB41839)
-                  : Colors.grey[300]!,
+              color: _isFocused ? const Color(0xFFB41839) : Colors.grey[300]!,
               width: _isFocused ? 2 : 1,
             ),
           ),
@@ -764,18 +801,12 @@ class _DateField3DState extends State<_DateField3D> {
                       ? const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFFB41839),
-                            Color(0xFF3F1B3D),
-                          ],
+                          colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                         )
                       : LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Colors.grey[300]!,
-                            Colors.grey[400]!,
-                          ],
+                          colors: [Colors.grey[300]!, Colors.grey[400]!],
                         ),
                   boxShadow: [
                     BoxShadow(
@@ -787,11 +818,7 @@ class _DateField3DState extends State<_DateField3D> {
                     ),
                   ],
                 ),
-                child: Icon(
-                  widget.icon,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: Icon(widget.icon, color: Colors.white, size: 20),
               ),
               Expanded(
                 child: Column(
@@ -801,25 +828,25 @@ class _DateField3DState extends State<_DateField3D> {
                       widget.label,
                       style: TextStyle(
                         fontSize: 12,
-                        color: _isFocused 
+                        color: _isFocused
                             ? const Color(0xFFB41839)
                             : Colors.grey[600],
-                        fontWeight: _isFocused 
+                        fontWeight: _isFocused
                             ? FontWeight.w600
                             : FontWeight.normal,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.value != null 
+                      widget.value != null
                           ? _formatDate(widget.value)
                           : 'Sélectionner une date',
                       style: TextStyle(
                         fontSize: 16,
-                        color: widget.value != null 
+                        color: widget.value != null
                             ? Colors.black87
                             : Colors.grey[400],
-                        fontWeight: widget.value != null 
+                        fontWeight: widget.value != null
                             ? FontWeight.w500
                             : FontWeight.normal,
                       ),
@@ -827,11 +854,7 @@ class _DateField3DState extends State<_DateField3D> {
                   ],
                 ),
               ),
-              Icon(
-                Icons.calendar_month,
-                color: Colors.grey[400],
-                size: 20,
-              ),
+              Icon(Icons.calendar_month, color: Colors.grey[400], size: 20),
             ],
           ),
         ),

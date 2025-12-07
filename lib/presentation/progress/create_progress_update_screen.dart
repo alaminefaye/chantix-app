@@ -6,13 +6,21 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../data/models/progress_update_model.dart';
+import '../../config/api_config.dart';
 import '../projects/project_provider.dart';
 import 'progress_provider.dart';
 
 class CreateProgressUpdateScreen extends StatefulWidget {
   final int projectId;
+  final ProgressUpdateModel? update; // Pour le mode édition
 
-  const CreateProgressUpdateScreen({super.key, required this.projectId});
+  const CreateProgressUpdateScreen({
+    super.key,
+    required this.projectId,
+    this.update,
+  });
 
   @override
   State<CreateProgressUpdateScreen> createState() =>
@@ -27,8 +35,10 @@ class _CreateProgressUpdateScreenState
   final AudioRecorder _audioRecorder = AudioRecorder();
 
   int _progress = 0;
-  final List<File> _photos = [];
-  final List<File> _videos = [];
+  final List<File> _photos = []; // Nouvelles photos
+  final List<String> _existingPhotos = []; // URLs des photos existantes
+  final List<File> _videos = []; // Nouvelles vidéos
+  final List<String> _existingVideos = []; // URLs des vidéos existantes
   File? _audioFile;
   bool _isRecording = false;
   Position? _position;
@@ -37,7 +47,65 @@ class _CreateProgressUpdateScreenState
   @override
   void initState() {
     super.initState();
-    _requestLocationPermission();
+    // Si on est en mode édition, initialiser les valeurs
+    if (widget.update != null) {
+      _progress = widget.update!.progress;
+      _descriptionController.text = widget.update!.description ?? '';
+      // Initialiser les photos existantes (garder les URLs complètes pour l'affichage)
+      if (widget.update!.photos != null && widget.update!.photos!.isNotEmpty) {
+        _existingPhotos.addAll(widget.update!.photos!);
+      }
+      // Initialiser les vidéos existantes (garder les URLs complètes pour l'affichage)
+      if (widget.update!.videos != null && widget.update!.videos!.isNotEmpty) {
+        _existingVideos.addAll(widget.update!.videos!);
+      }
+      if (widget.update!.latitude != null && widget.update!.longitude != null) {
+        _position = Position(
+          latitude: widget.update!.latitude!,
+          longitude: widget.update!.longitude!,
+          timestamp: DateTime.now(),
+          accuracy: 0,
+          altitude: 0,
+          altitudeAccuracy: 0,
+          heading: 0,
+          headingAccuracy: 0,
+          speed: 0,
+          speedAccuracy: 0,
+        );
+      }
+    } else {
+      _requestLocationPermission();
+    }
+  }
+
+  String _getFullUrl(String url) {
+    if (url.startsWith('http')) {
+      return url;
+    }
+    if (url.startsWith('/storage/')) {
+      return '${ApiConfig.baseUrl.replaceAll('/api', '')}$url';
+    }
+    return '${ApiConfig.baseUrl.replaceAll('/api', '')}/storage/$url';
+  }
+
+  // Extraire le chemin relatif depuis une URL complète
+  String _extractRelativePath(String url) {
+    if (!url.startsWith('http')) {
+      // C'est déjà un chemin relatif
+      return url;
+    }
+    // Extraire le chemin après /storage/
+    final storageIndex = url.indexOf('/storage/');
+    if (storageIndex != -1) {
+      return url.substring(storageIndex + 9); // +9 pour sauter "/storage/"
+    }
+    // Si on ne trouve pas /storage/, essayer d'extraire le dernier segment
+    final segments = url.split('/');
+    if (segments.length > 2) {
+      // Prendre les deux derniers segments (ex: progress/photos/file.jpg)
+      return '${segments[segments.length - 2]}/${segments.last}';
+    }
+    return url;
   }
 
   @override
@@ -67,70 +135,26 @@ class _CreateProgressUpdateScreenState
     }
   }
 
-  Future<void> _handlePermissionDenied(String permissionName, PermissionStatus status) async {
-    if (!mounted) return;
-    
-    if (status.isPermanentlyDenied) {
-      final shouldOpen = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Permission requise'),
-          content: Text(
-            'La permission $permissionName est requise. '
-            'Voulez-vous ouvrir les paramètres pour l\'activer ?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Annuler'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Ouvrir les paramètres'),
-            ),
-          ],
-        ),
-      );
-      
-      if (shouldOpen == true && mounted) {
-        await openAppSettings();
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Permission $permissionName refusée'),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
   Future<void> _pickPhotos() async {
     if (!mounted) return;
-    
+
     try {
       // Sur iOS, pas besoin de permission pour la galerie
-      // Sur Android, demander la permission
+      // Sur Android, demander la permission simplement
       if (Platform.isAndroid) {
         final status = await Permission.photos.request();
         if (!status.isGranted) {
-          await _handlePermissionDenied('galerie', status);
-          return;
+          return; // Permission refusée, on continue simplement
         }
       }
 
       // Utiliser pickMultiImage pour Android, pickImage pour iOS
       List<XFile> selectedImages = [];
-      
+
       if (Platform.isAndroid) {
         // Android supporte la sélection multiple
         try {
-          selectedImages = await _imagePicker.pickMultiImage(
-            imageQuality: 80,
-          );
+          selectedImages = await _imagePicker.pickMultiImage(imageQuality: 80);
         } catch (e) {
           debugPrint('Erreur pickMultiImage: $e');
           // Fallback sur sélection simple
@@ -164,7 +188,9 @@ class _CreateProgressUpdateScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de la sélection: ${e.toString().length > 100 ? e.toString().substring(0, 100) + '...' : e.toString()}'),
+            content: Text(
+              'Erreur lors de la sélection: ${e.toString().length > 100 ? e.toString().substring(0, 100) + '...' : e.toString()}',
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -175,21 +201,11 @@ class _CreateProgressUpdateScreenState
 
   Future<void> _takePhoto() async {
     if (!mounted) return;
-    
+
     try {
-      // Vérifier et demander la permission caméra
-      final status = await Permission.camera.request();
-      
-      if (!status.isGranted) {
-        await _handlePermissionDenied('caméra', status);
-        return;
-      }
-
-      // Attendre un peu pour s'assurer que la permission est bien accordée
-      await Future.delayed(const Duration(milliseconds: 100));
-      
-      if (!mounted) return;
-
+      // Sur iOS, image_picker demande automatiquement la permission caméra
+      // On l'appelle directement - il affichera la popup native iOS automatiquement
+      // Exactement comme Geolocator pour la localisation
       final image = await _imagePicker.pickImage(
         source: ImageSource.camera,
         imageQuality: 80,
@@ -200,41 +216,30 @@ class _CreateProgressUpdateScreenState
           _photos.add(File(image.path));
         });
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
+      // image_picker gère les permissions automatiquement
+      // Si erreur, c'est que l'utilisateur a refusé ou annulé
       debugPrint('Erreur lors de la prise de photo: $e');
-      debugPrint('Stack trace: $stackTrace');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors de la prise de photo: ${e.toString().length > 100 ? e.toString().substring(0, 100) + '...' : e.toString()}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
     }
   }
 
   Future<void> _pickVideos() async {
     if (!mounted) return;
-    
+
     try {
       // Sur iOS, pas besoin de permission pour la galerie
-      // Sur Android, demander la permission
+      // Sur Android, demander la permission simplement
       if (Platform.isAndroid) {
         final status = await Permission.photos.request();
         if (!status.isGranted) {
-          await _handlePermissionDenied('galerie vidéo', status);
-          return;
+          return; // Permission refusée, on continue simplement
         }
       }
 
       await Future.delayed(const Duration(milliseconds: 100));
       if (!mounted) return;
 
-      final video = await _imagePicker.pickVideo(
-        source: ImageSource.gallery,
-      );
+      final video = await _imagePicker.pickVideo(source: ImageSource.gallery);
 
       if (video != null && mounted) {
         setState(() {
@@ -247,7 +252,9 @@ class _CreateProgressUpdateScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de la sélection de vidéo: ${e.toString().length > 100 ? e.toString().substring(0, 100) + '...' : e.toString()}'),
+            content: Text(
+              'Erreur lors de la sélection de vidéo: ${e.toString().length > 100 ? e.toString().substring(0, 100) + '...' : e.toString()}',
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -258,95 +265,172 @@ class _CreateProgressUpdateScreenState
 
   Future<void> _recordVideo() async {
     if (!mounted) return;
-    
+
     try {
-      // Demander permission caméra
-      final cameraStatus = await Permission.camera.request();
-      if (!cameraStatus.isGranted) {
-        await _handlePermissionDenied('caméra', cameraStatus);
-        return;
-      }
-
-      // Demander permission microphone
-      final micStatus = await Permission.microphone.request();
-      if (!micStatus.isGranted) {
-        await _handlePermissionDenied('microphone', micStatus);
-        return;
-      }
-
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (!mounted) return;
-
-      final video = await _imagePicker.pickVideo(
-        source: ImageSource.camera,
-      );
+      // Sur iOS, image_picker demande automatiquement les permissions caméra et microphone
+      // On l'appelle directement - il affichera les popups natives iOS automatiquement
+      // Exactement comme Geolocator pour la localisation
+      final video = await _imagePicker.pickVideo(source: ImageSource.camera);
 
       if (video != null && mounted) {
         setState(() {
           _videos.add(File(video.path));
         });
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
+      // image_picker gère les permissions automatiquement
+      // Si erreur, c'est que l'utilisateur a refusé ou annulé
       debugPrint('Erreur lors de l\'enregistrement vidéo: $e');
-      debugPrint('Stack trace: $stackTrace');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors de l\'enregistrement: ${e.toString().length > 100 ? e.toString().substring(0, 100) + '...' : e.toString()}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
     }
   }
 
   Future<void> _startRecording() async {
     if (!mounted) return;
-    
+
     try {
-      final status = await Permission.microphone.request();
-      if (!status.isGranted) {
-        if (mounted) {
-          String message = 'Permission de microphone refusée';
-          if (status.isPermanentlyDenied) {
-            message = 'Permission de microphone refusée définitivement. Veuillez l\'activer dans les paramètres.';
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-        return;
-      }
+      // Approche simplifiée : essayer directement de démarrer l'enregistrement
+      // et gérer les erreurs de permission si nécessaire
 
-      if (await _audioRecorder.hasPermission()) {
-        final directory = await getTemporaryDirectory();
-        final path = '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      // Préparer le chemin pour l'enregistrement
+      final directory = await getTemporaryDirectory();
+      final path =
+          '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
-        await _audioRecorder.start(
-          const RecordConfig(),
-          path: path,
-        );
+      debugPrint('Tentative de démarrage de l\'enregistrement: $path');
+
+      // Essayer directement de démarrer l'enregistrement
+      // Si la permission n'est pas accordée, une erreur sera levée
+      try {
+        await _audioRecorder.start(const RecordConfig(), path: path);
+        debugPrint('Enregistrement démarré avec succès');
 
         if (mounted) {
           setState(() {
             _isRecording = true;
             _audioFile = File(path);
           });
-        }
-      } else {
-        if (mounted) {
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Permission de microphone non accordée par l\'enregistreur audio'),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 3),
+              content: Text('Enregistrement audio démarré'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
             ),
           );
+        }
+        return; // Succès, on sort
+      } catch (e) {
+        debugPrint('Erreur lors du démarrage: $e');
+
+        // Si l'erreur n'est pas liée à la permission, propager l'erreur
+        final errorString = e.toString().toLowerCase();
+        if (!errorString.contains('permission') &&
+            !errorString.contains('denied') &&
+            !errorString.contains('microphone') &&
+            !errorString.contains('unauthorized')) {
+          // Autre erreur, la propager
+          rethrow;
+        }
+
+        // Erreur liée à la permission, vérifier le statut
+        var status = await Permission.microphone.status;
+        debugPrint('Statut permission après erreur: $status');
+
+        // Si définitivement refusée, proposer d'aller dans les paramètres
+        if (status.isPermanentlyDenied) {
+          if (mounted) {
+            final result = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Permission microphone requise'),
+                content: const Text(
+                  'Pour enregistrer des rapports audio, veuillez activer la permission microphone dans les paramètres de l\'application.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Annuler'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('Paramètres'),
+                  ),
+                ],
+              ),
+            );
+
+            if (result == true) {
+              await openAppSettings();
+              // Attendre que l'utilisateur revienne
+              await Future.delayed(const Duration(seconds: 2));
+
+              // Réessayer après le retour
+              status = await Permission.microphone.status;
+              debugPrint('Statut après retour des paramètres: $status');
+
+              if (status.isGranted) {
+                // Réessayer de démarrer l'enregistrement
+                try {
+                  await _audioRecorder.start(const RecordConfig(), path: path);
+                  debugPrint(
+                    'Enregistrement démarré avec succès après activation',
+                  );
+
+                  if (mounted) {
+                    setState(() {
+                      _isRecording = true;
+                      _audioFile = File(path);
+                    });
+                  }
+                  return;
+                } catch (e2) {
+                  debugPrint('Erreur lors du réessai: $e2');
+                }
+              }
+            }
+          }
+          return;
+        }
+
+        // Si pas définitivement refusée, demander la permission
+        if (!status.isGranted) {
+          debugPrint('Demande de permission microphone...');
+          status = await Permission.microphone.request();
+          debugPrint('Résultat de la demande: $status');
+
+          if (status.isGranted) {
+            // Réessayer de démarrer l'enregistrement
+            try {
+              await _audioRecorder.start(const RecordConfig(), path: path);
+              debugPrint(
+                'Enregistrement démarré avec succès après autorisation',
+              );
+
+              if (mounted) {
+                setState(() {
+                  _isRecording = true;
+                  _audioFile = File(path);
+                });
+              }
+              return;
+            } catch (e2) {
+              debugPrint('Erreur lors du démarrage après autorisation: $e2');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Erreur: ${e2.toString()}'),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              }
+              return;
+            }
+          } else {
+            // Permission refusée
+            debugPrint('Permission refusée par l\'utilisateur');
+            return;
+          }
         }
       }
     } catch (e, stackTrace) {
@@ -355,7 +439,9 @@ class _CreateProgressUpdateScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de l\'enregistrement: ${e.toString().length > 100 ? e.toString().substring(0, 100) + '...' : e.toString()}'),
+            content: Text(
+              'Erreur lors du démarrage de l\'enregistrement: ${e.toString()}',
+            ),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -378,11 +464,9 @@ class _CreateProgressUpdateScreenState
         _isRecording = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
       }
     }
   }
@@ -396,21 +480,48 @@ class _CreateProgressUpdateScreenState
       _isLoading = true;
     });
 
-    final progressProvider =
-        Provider.of<ProgressProvider>(context, listen: false);
-
-    final success = await progressProvider.createProgressUpdate(
-      projectId: widget.projectId,
-      progress: _progress,
-      description: _descriptionController.text.trim().isEmpty
-          ? null
-          : _descriptionController.text.trim(),
-      audioPath: _audioFile?.path,
-      latitude: _position?.latitude,
-      longitude: _position?.longitude,
-      photos: _photos.isEmpty ? null : _photos,
-      videos: _videos.isEmpty ? null : _videos,
+    final progressProvider = Provider.of<ProgressProvider>(
+      context,
+      listen: false,
     );
+
+    final bool success;
+    if (widget.update != null) {
+      // Mode édition
+      success = await progressProvider.updateProgressUpdate(
+        projectId: widget.projectId,
+        progressUpdateId: widget.update!.id,
+        progress: _progress,
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        audioPath: _audioFile?.path,
+        latitude: _position?.latitude,
+        longitude: _position?.longitude,
+        photos: _photos.isEmpty ? null : _photos,
+        videos: _videos.isEmpty ? null : _videos,
+        existingPhotos: _existingPhotos.isEmpty
+            ? null
+            : _existingPhotos.map((url) => _extractRelativePath(url)).toList(),
+        existingVideos: _existingVideos.isEmpty
+            ? null
+            : _existingVideos.map((url) => _extractRelativePath(url)).toList(),
+      );
+    } else {
+      // Mode création
+      success = await progressProvider.createProgressUpdate(
+        projectId: widget.projectId,
+        progress: _progress,
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        audioPath: _audioFile?.path,
+        latitude: _position?.latitude,
+        longitude: _position?.longitude,
+        photos: _photos.isEmpty ? null : _photos,
+        videos: _videos.isEmpty ? null : _videos,
+      );
+    }
 
     setState(() {
       _isLoading = false;
@@ -418,8 +529,12 @@ class _CreateProgressUpdateScreenState
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Mise à jour créée avec succès'),
+        SnackBar(
+          content: Text(
+            widget.update != null
+                ? 'Mise à jour modifiée avec succès'
+                : 'Mise à jour créée avec succès',
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -428,7 +543,10 @@ class _CreateProgressUpdateScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            progressProvider.errorMessage ?? 'Erreur lors de la création',
+            progressProvider.errorMessage ??
+                (widget.update != null
+                    ? 'Erreur lors de la modification'
+                    : 'Erreur lors de la création'),
           ),
           backgroundColor: Colors.red,
         ),
@@ -438,7 +556,10 @@ class _CreateProgressUpdateScreenState
 
   @override
   Widget build(BuildContext context) {
-    final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
+    final projectProvider = Provider.of<ProjectProvider>(
+      context,
+      listen: false,
+    );
     final project = projectProvider.projects.firstWhere(
       (p) => p.id == widget.projectId,
       orElse: () => projectProvider.selectedProject!,
@@ -471,7 +592,9 @@ class _CreateProgressUpdateScreenState
                     ),
                     Expanded(
                       child: Text(
-                        'Nouvelle mise à jour',
+                        widget.update != null
+                            ? 'Modifier la mise à jour'
+                            : 'Nouvelle mise à jour',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -503,7 +626,9 @@ class _CreateProgressUpdateScreenState
                         children: [
                           // Projet info
                           Card(
-                            color: const Color(0xFFB41839).withAlpha((255 * 0.1).round()),
+                            color: const Color(
+                              0xFFB41839,
+                            ).withAlpha((255 * 0.1).round()),
                             child: Padding(
                               padding: const EdgeInsets.all(12.0),
                               child: Row(
@@ -585,11 +710,15 @@ class _CreateProgressUpdateScreenState
                                 padding: const EdgeInsets.all(12.0),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.location_on, color: Colors.blue),
+                                    const Icon(
+                                      Icons.location_on,
+                                      color: Colors.blue,
+                                    ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           const Text(
                                             'Localisation',
@@ -631,7 +760,9 @@ class _CreateProgressUpdateScreenState
                                   icon: const Icon(Icons.camera_alt),
                                   label: const Text('Prendre une photo'),
                                   style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -642,20 +773,31 @@ class _CreateProgressUpdateScreenState
                                   icon: const Icon(Icons.photo_library),
                                   label: const Text('Galerie'),
                                   style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          if (_photos.isNotEmpty) ...[
+                          // Afficher les photos existantes et nouvelles
+                          if (_existingPhotos.isNotEmpty ||
+                              _photos.isNotEmpty) ...[
                             const SizedBox(height: 12),
                             SizedBox(
                               height: 100,
                               child: ListView.builder(
                                 scrollDirection: Axis.horizontal,
-                                itemCount: _photos.length,
+                                itemCount:
+                                    _existingPhotos.length + _photos.length,
                                 itemBuilder: (context, index) {
+                                  final bool isExisting =
+                                      index < _existingPhotos.length;
+                                  final int actualIndex = isExisting
+                                      ? index
+                                      : index - _existingPhotos.length;
+
                                   return Stack(
                                     children: [
                                       Container(
@@ -663,11 +805,38 @@ class _CreateProgressUpdateScreenState
                                         height: 100,
                                         margin: const EdgeInsets.only(right: 8),
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(8),
-                                          image: DecorationImage(
-                                            image: FileImage(_photos[index]),
-                                            fit: BoxFit.cover,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
                                           ),
+                                          color: Colors.grey[300],
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          child: isExisting
+                                              ? CachedNetworkImage(
+                                                  imageUrl: _getFullUrl(
+                                                    _existingPhotos[actualIndex],
+                                                  ),
+                                                  fit: BoxFit.cover,
+                                                  placeholder: (context, url) =>
+                                                      const Center(
+                                                        child:
+                                                            CircularProgressIndicator(),
+                                                      ),
+                                                  errorWidget:
+                                                      (context, url, error) =>
+                                                          const Icon(
+                                                            Icons.error,
+                                                          ),
+                                                )
+                                              : Image(
+                                                  image: FileImage(
+                                                    _photos[actualIndex],
+                                                  ),
+                                                  fit: BoxFit.cover,
+                                                ),
                                         ),
                                       ),
                                       Positioned(
@@ -676,7 +845,13 @@ class _CreateProgressUpdateScreenState
                                         child: GestureDetector(
                                           onTap: () {
                                             setState(() {
-                                              _photos.removeAt(index);
+                                              if (isExisting) {
+                                                _existingPhotos.removeAt(
+                                                  actualIndex,
+                                                );
+                                              } else {
+                                                _photos.removeAt(actualIndex);
+                                              }
                                             });
                                           },
                                           child: Container(
@@ -717,9 +892,11 @@ class _CreateProgressUpdateScreenState
                                 child: OutlinedButton.icon(
                                   onPressed: _recordVideo,
                                   icon: const Icon(Icons.videocam),
-                                  label: const Text('Enregistrer'),
+                                  label: const Text('Enregistrer une vidéo'),
                                   style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -730,56 +907,131 @@ class _CreateProgressUpdateScreenState
                                   icon: const Icon(Icons.video_library),
                                   label: const Text('Galerie'),
                                   style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          if (_videos.isNotEmpty) ...[
+                          // Afficher les vidéos existantes et nouvelles
+                          if (_existingVideos.isNotEmpty ||
+                              _videos.isNotEmpty) ...[
                             const SizedBox(height: 12),
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              children: _videos.asMap().entries.map((entry) {
-                                final index = entry.key;
-                                return Stack(
-                                  children: [
-                                    Container(
-                                      width: 100,
-                                      height: 100,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        color: Colors.grey[300],
-                                      ),
-                                      child: const Icon(Icons.videocam, size: 40),
-                                    ),
-                                    Positioned(
-                                      top: 4,
-                                      right: 4,
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            _videos.removeAt(index);
-                                          });
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: const BoxDecoration(
-                                            color: Colors.red,
-                                            shape: BoxShape.circle,
+                              children: [
+                                // Vidéos existantes
+                                ..._existingVideos.asMap().entries.map((entry) {
+                                  final index = entry.key;
+                                  return Stack(
+                                    children: [
+                                      Container(
+                                        width: 100,
+                                        height: 100,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
                                           ),
-                                          child: const Icon(
-                                            Icons.close,
-                                            color: Colors.white,
-                                            size: 16,
+                                          color: Colors.grey[300],
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          child: CachedNetworkImage(
+                                            imageUrl: _getFullUrl(entry.value),
+                                            fit: BoxFit.cover,
+                                            placeholder: (context, url) =>
+                                                const Center(
+                                                  child: Icon(
+                                                    Icons.videocam,
+                                                    size: 40,
+                                                  ),
+                                                ),
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    const Icon(
+                                                      Icons.videocam,
+                                                      size: 40,
+                                                    ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                );
-                              }).toList(),
+                                      Positioned(
+                                        top: 4,
+                                        right: 4,
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _existingVideos.removeAt(index);
+                                            });
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.red,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.close,
+                                              color: Colors.white,
+                                              size: 16,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }),
+                                // Nouvelles vidéos
+                                ..._videos.asMap().entries.map((entry) {
+                                  final index = entry.key;
+                                  return Stack(
+                                    children: [
+                                      Container(
+                                        width: 100,
+                                        height: 100,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          color: Colors.grey[300],
+                                        ),
+                                        child: const Icon(
+                                          Icons.videocam,
+                                          size: 40,
+                                        ),
+                                      ),
+                                      Positioned(
+                                        top: 4,
+                                        right: 4,
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _videos.removeAt(index);
+                                            });
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.red,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.close,
+                                              color: Colors.white,
+                                              size: 16,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }),
+                              ],
                             ),
                           ],
                           const SizedBox(height: 24),
@@ -798,13 +1050,23 @@ class _CreateProgressUpdateScreenState
                             children: [
                               Expanded(
                                 child: ElevatedButton.icon(
-                                  onPressed: _isRecording ? _stopRecording : _startRecording,
-                                  icon: Icon(_isRecording ? Icons.stop : Icons.mic),
-                                  label: Text(_isRecording ? 'Arrêter' : 'Enregistrer'),
+                                  onPressed: _isRecording
+                                      ? _stopRecording
+                                      : _startRecording,
+                                  icon: Icon(
+                                    _isRecording ? Icons.stop : Icons.mic,
+                                  ),
+                                  label: Text(
+                                    _isRecording ? 'Arrêter' : 'Enregistrer',
+                                  ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: _isRecording ? Colors.red : Colors.green,
+                                    backgroundColor: _isRecording
+                                        ? Colors.red
+                                        : Colors.green,
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -815,7 +1077,10 @@ class _CreateProgressUpdateScreenState
                               padding: const EdgeInsets.only(top: 8),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.audiotrack, color: Colors.green),
+                                  const Icon(
+                                    Icons.audiotrack,
+                                    color: Colors.green,
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
@@ -824,7 +1089,10 @@ class _CreateProgressUpdateScreenState
                                     ),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.red,
+                                    ),
                                     onPressed: () {
                                       setState(() {
                                         _audioFile = null;
@@ -849,7 +1117,9 @@ class _CreateProgressUpdateScreenState
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.transparent,
                                 shadowColor: Colors.transparent,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -861,12 +1131,16 @@ class _CreateProgressUpdateScreenState
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
                                         valueColor:
-                                            AlwaysStoppedAnimation<Color>(Colors.white),
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
                                       ),
                                     )
-                                  : const Text(
-                                      'ENREGISTRER LA MISE À JOUR',
-                                      style: TextStyle(
+                                  : Text(
+                                      widget.update != null
+                                          ? 'MODIFIER LA MISE À JOUR'
+                                          : 'ENREGISTRER LA MISE À JOUR',
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -887,4 +1161,3 @@ class _CreateProgressUpdateScreenState
     );
   }
 }
-

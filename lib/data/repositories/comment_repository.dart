@@ -18,7 +18,17 @@ class CommentRepository {
       
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] ?? response.data;
-        return data.map((json) => CommentModel.fromJson(json)).toList();
+        final comments = data.map((json) => CommentModel.fromJson(json)).toList();
+        // Debug: vérifier que les réponses sont bien parsées
+        for (var comment in comments) {
+          if (comment.replies != null && comment.replies!.isNotEmpty) {
+            print('Comment ${comment.id} has ${comment.replies!.length} replies');
+            for (var reply in comment.replies!) {
+              print('  - Reply ${reply.id} by ${reply.user?.name ?? "Unknown"}');
+            }
+          }
+        }
+        return comments;
       }
       return [];
     } catch (e) {

@@ -7,14 +7,12 @@ part of 'comment_model.dart';
 // **************************************************************************
 
 CommentModel _$CommentModelFromJson(Map<String, dynamic> json) => CommentModel(
-      id: (json['id'] as num).toInt(),
-      projectId: (json['project_id'] as num).toInt(),
-      userId: (json['user_id'] as num).toInt(),
-      parentId: (json['parent_id'] as num?)?.toInt(),
+      id: CommentModel._intFromJson(json['id']),
+      projectId: CommentModel._intFromJson(json['project_id']),
+      userId: CommentModel._intFromJson(json['user_id']),
+      parentId: CommentModel._intFromJsonNullable(json['parent_id']),
       content: json['content'] as String,
-      mentionedUsers: (json['mentioned_users'] as List<dynamic>?)
-          ?.map((e) => (e as num).toInt())
-          .toList(),
+      mentionedUsers: CommentModel._intListFromJson(json['mentioned_users']),
       attachments: (json['attachments'] as List<dynamic>?)
           ?.map((e) => e as Map<String, dynamic>)
           .toList(),

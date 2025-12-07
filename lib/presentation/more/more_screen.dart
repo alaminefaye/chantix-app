@@ -9,6 +9,8 @@ import '../reports/reports_screen.dart';
 import '../auth/auth_provider.dart';
 import '../auth/login_screen.dart';
 import '../profile/change_password_screen.dart';
+import '../../data/models/user_model.dart';
+import '../../config/api_config.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -57,95 +59,13 @@ class MoreScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
-          _buildSectionTitle('Gestion'),
-          _buildMenuItem(
-            context,
-            icon: Icons.inventory_2,
-            title: 'Matériaux',
-            subtitle: 'Gérer le catalogue et les stocks',
-            color: Colors.blue,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const MaterialsScreen(),
-                ),
-              );
-            },
-          ),
-          _buildMenuItem(
-            context,
-            icon: Icons.people,
-            title: 'Employés',
-            subtitle: 'Gérer les employés et équipes',
-            color: Colors.green,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const EmployeesScreen(),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 18),
-          _buildSectionTitle('Financier'),
-          _buildMenuItem(
-            context,
-            icon: Icons.attach_money,
-            title: 'Dépenses',
-            subtitle: 'Suivre les dépenses par projet',
-            color: Colors.orange,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const ExpensesScreen(),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 18),
-          _buildSectionTitle('Organisation'),
-          _buildMenuItem(
-            context,
-            icon: Icons.task,
-            title: 'Tâches',
-            subtitle: 'Gérer les tâches et le planning',
-            color: Colors.purple,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const TasksScreen(),
-                ),
-              );
-            },
-          ),
-          _buildMenuItem(
-            context,
-            icon: Icons.comment,
-            title: 'Commentaires',
-            subtitle: 'Discussions et échanges',
-            color: Colors.teal,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const CommentsScreen(),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 18),
-          _buildSectionTitle('Rapports'),
-          _buildMenuItem(
-            context,
-            icon: Icons.description,
-            title: 'Rapports',
-            subtitle: 'Générer et consulter les rapports',
-            color: Colors.indigo,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const ReportsScreen(),
-                ),
-              );
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, _) {
+              final user = authProvider.user;
+              if (user == null) {
+                return const SizedBox.shrink();
+              }
+              return _buildProfileHeader(context, user);
             },
           ),
           const SizedBox(height: 18),
@@ -158,9 +78,7 @@ class MoreScreen extends StatelessWidget {
             color: Colors.blueGrey,
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const ChangePasswordScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
               );
             },
           ),
@@ -172,6 +90,86 @@ class MoreScreen extends StatelessWidget {
             color: Colors.red,
             onTap: () {
               _showDeleteAccountDialog(context);
+            },
+          ),
+          const SizedBox(height: 18),
+          _buildSectionTitle('Gestion'),
+          _buildMenuItem(
+            context,
+            icon: Icons.inventory_2,
+            title: 'Matériaux',
+            subtitle: 'Gérer le catalogue et les stocks',
+            color: Colors.blue,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const MaterialsScreen()),
+              );
+            },
+          ),
+          _buildMenuItem(
+            context,
+            icon: Icons.people,
+            title: 'Employés',
+            subtitle: 'Gérer les employés et équipes',
+            color: Colors.green,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const EmployeesScreen()),
+              );
+            },
+          ),
+          const SizedBox(height: 18),
+          _buildSectionTitle('Financier'),
+          _buildMenuItem(
+            context,
+            icon: Icons.attach_money,
+            title: 'Dépenses',
+            subtitle: 'Suivre les dépenses par projet',
+            color: Colors.orange,
+            onTap: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const ExpensesScreen()));
+            },
+          ),
+          const SizedBox(height: 18),
+          _buildSectionTitle('Organisation'),
+          _buildMenuItem(
+            context,
+            icon: Icons.task,
+            title: 'Tâches',
+            subtitle: 'Gérer les tâches et le planning',
+            color: Colors.purple,
+            onTap: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const TasksScreen()));
+            },
+          ),
+          _buildMenuItem(
+            context,
+            icon: Icons.comment,
+            title: 'Commentaires',
+            subtitle: 'Discussions et échanges',
+            color: Colors.teal,
+            onTap: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const CommentsScreen()));
+            },
+          ),
+          const SizedBox(height: 18),
+          _buildSectionTitle('Rapports'),
+          _buildMenuItem(
+            context,
+            icon: Icons.description,
+            title: 'Rapports',
+            subtitle: 'Générer et consulter les rapports',
+            color: Colors.indigo,
+            onTap: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const ReportsScreen()));
             },
           ),
         ],
@@ -199,7 +197,10 @@ class MoreScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
-                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                final authProvider = Provider.of<AuthProvider>(
+                  context,
+                  listen: false,
+                );
                 await authProvider.logout();
                 if (context.mounted) {
                   Navigator.of(context).pushAndRemoveUntil(
@@ -245,10 +246,13 @@ class MoreScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
-                final authProvider = Provider.of<AuthProvider>(context, listen: false);
-                
+                final authProvider = Provider.of<AuthProvider>(
+                  context,
+                  listen: false,
+                );
+
                 final result = await authProvider.deleteAccount();
-                
+
                 if (context.mounted) {
                   if (result['success'] == true) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -265,7 +269,8 @@ class MoreScreen extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          result['message'] ?? 'Erreur lors de la suppression du compte.',
+                          result['message'] ??
+                              'Erreur lors de la suppression du compte.',
                         ),
                         backgroundColor: Colors.red,
                       ),
@@ -282,6 +287,180 @@ class MoreScreen extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildProfileHeader(BuildContext context, UserModel user) {
+    final initials = user.name.isNotEmpty
+        ? user.name.split(' ').map((n) => n[0]).take(2).join().toUpperCase()
+        : 'U';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFB41839), // Rouge
+            Color(0xFF3F1B3D), // Violet foncé
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            // Avatar
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.2),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+              ),
+              child: user.avatar != null && user.avatar!.isNotEmpty
+                  ? ClipOval(
+                      child: Image.network(
+                        user.avatar!.startsWith('http')
+                            ? user.avatar!
+                            : '${ApiConfig.baseUrl.replaceAll('/api', '')}/storage/${user.avatar!}',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Text(
+                              initials,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        initials,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+            ),
+            const SizedBox(width: 16),
+            // User Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          user.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (user.isSuperAdmin)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.amber, width: 1),
+                          ),
+                          child: const Text(
+                            'Admin',
+                            style: TextStyle(
+                              color: Colors.amber,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.email_outlined,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          user.email,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 13,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        user.isVerified
+                            ? Icons.verified
+                            : Icons.verified_outlined,
+                        color: user.isVerified
+                            ? Colors.greenAccent
+                            : Colors.white.withValues(alpha: 0.6),
+                        size: 14,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        user.isVerified ? 'Email vérifié' : 'Email non vérifié',
+                        style: TextStyle(
+                          color: user.isVerified
+                              ? Colors.greenAccent
+                              : Colors.white.withValues(alpha: 0.7),
+                          fontSize: 11,
+                          fontWeight: user.isVerified
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -341,10 +520,7 @@ class MoreScreen extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
                 Container(
@@ -354,10 +530,7 @@ class MoreScreen extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        color,
-                        color.withValues(alpha: 0.8),
-                      ],
+                      colors: [color, color.withValues(alpha: 0.8)],
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -368,11 +541,7 @@ class MoreScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: Icon(
-                    icon,
-                    color: Colors.white,
-                    size: 18,
-                  ),
+                  child: Icon(icon, color: Colors.white, size: 18),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -390,19 +559,12 @@ class MoreScreen extends StatelessWidget {
                       const SizedBox(height: 3),
                       Text(
                         subtitle,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                       ),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: Colors.grey[400],
-                  size: 20,
-                ),
+                Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
               ],
             ),
           ),
@@ -411,4 +573,3 @@ class MoreScreen extends StatelessWidget {
     );
   }
 }
-

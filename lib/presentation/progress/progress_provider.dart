@@ -74,6 +74,56 @@ class ProgressProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> updateProgressUpdate({
+    required int projectId,
+    required int progressUpdateId,
+    required int progress,
+    String? description,
+    String? audioPath,
+    double? latitude,
+    double? longitude,
+    List<File>? photos,
+    List<File>? videos,
+    List<String>? existingPhotos,
+    List<String>? existingVideos,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final result = await _repository.updateProgressUpdate(
+        projectId: projectId,
+        progressUpdateId: progressUpdateId,
+        progress: progress,
+        description: description,
+        audioPath: audioPath,
+        latitude: latitude,
+        longitude: longitude,
+        photos: photos,
+        videos: videos,
+        existingPhotos: existingPhotos,
+        existingVideos: existingVideos,
+      );
+      _isLoading = false;
+
+      if (result['success'] == true) {
+        await loadProgressUpdates(projectId);
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = result['message'];
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> deleteProgressUpdate(int projectId, int progressUpdateId) async {
     _isLoading = true;
     notifyListeners();

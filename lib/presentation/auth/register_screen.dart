@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'auth_provider.dart';
 import 'login_screen.dart';
 import '../dashboard/dashboard_screen.dart';
+import '../../data/services/permission_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -80,10 +81,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
           // Vérifier si l'utilisateur est vérifié
           final user = authProvider.user;
           if (user != null && user.isVerified) {
-            // Utilisateur vérifié et token présent, naviguer vers le dashboard
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const DashboardScreen()),
-            );
+            // Utilisateur vérifié et token présent
+            // Demander toutes les permissions nécessaires au démarrage
+            await PermissionService.requestAllPermissions();
+
+            if (mounted) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const DashboardScreen()),
+              );
+            }
           } else {
             // Utilisateur non vérifié - pas de token retourné par le backend
             // Afficher un message et rediriger vers la page de connexion

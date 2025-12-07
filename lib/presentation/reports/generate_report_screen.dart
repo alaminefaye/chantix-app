@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'report_provider.dart';
 
@@ -20,6 +21,15 @@ class _GenerateReportScreenState extends State<GenerateReportScreen> {
   void initState() {
     super.initState();
     _reportDate = DateTime.now();
+
+    // Définir le projet sélectionné dans le provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final reportProvider = Provider.of<ReportProvider>(
+        context,
+        listen: false,
+      );
+      reportProvider.setSelectedProject(widget.projectId);
+    });
   }
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
@@ -69,15 +79,16 @@ class _GenerateReportScreenState extends State<GenerateReportScreen> {
     if (_type == 'hebdomadaire' && _endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Veuillez sélectionner une date de fin pour le rapport hebdomadaire'),
+          content: Text(
+            'Veuillez sélectionner une date de fin pour le rapport hebdomadaire',
+          ),
           backgroundColor: Colors.orange,
         ),
       );
       return;
     }
 
-    final reportProvider =
-        Provider.of<ReportProvider>(context, listen: false);
+    final reportProvider = Provider.of<ReportProvider>(context, listen: false);
 
     final result = await reportProvider.generateReport(
       type: _type,
@@ -87,20 +98,42 @@ class _GenerateReportScreenState extends State<GenerateReportScreen> {
 
     if (mounted) {
       if (result['success'] == true) {
+        // Attendre un peu pour que le serveur termine la création
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Recharger les rapports avant de fermer
+        await reportProvider.loadReports();
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Rapport généré avec succès'),
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop();
+
+        // Retourner avec un résultat pour indiquer qu'un rapport a été créé
+        Navigator.of(context).pop(true);
       } else {
+        final errorMessage =
+            result['message'] ?? 'Erreur lors de la génération du rapport';
+
+        if (kDebugMode) {
+          print('Erreur de génération: $errorMessage');
+          print('Résultat complet: $result');
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              result['message'] ?? 'Erreur lors de la génération',
-            ),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Fermer',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
           ),
         );
       }
@@ -196,10 +229,7 @@ class _GenerateReportScreenState extends State<GenerateReportScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Colors.blue[50]!,
-                    Colors.blue[100]!,
-                  ],
+                  colors: [Colors.blue[50]!, Colors.blue[100]!],
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -221,13 +251,14 @@ class _GenerateReportScreenState extends State<GenerateReportScreen> {
                           gradient: const LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF2196F3),
-                              Color(0xFF1976D2),
-                            ],
+                            colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
                           ),
                         ),
-                        child: const Icon(Icons.info_outline, size: 16, color: Colors.white),
+                        child: const Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: Colors.white,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Text(
@@ -259,10 +290,7 @@ class _GenerateReportScreenState extends State<GenerateReportScreen> {
                     gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFFB41839),
-                        Color(0xFF3F1B3D),
-                      ],
+                      colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -273,7 +301,9 @@ class _GenerateReportScreenState extends State<GenerateReportScreen> {
                     ],
                   ),
                   child: ElevatedButton(
-                    onPressed: reportProvider.isLoading ? null : _generateReport,
+                    onPressed: reportProvider.isLoading
+                        ? null
+                        : _generateReport,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       shadowColor: Colors.transparent,
@@ -288,7 +318,9 @@ class _GenerateReportScreenState extends State<GenerateReportScreen> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Text(
@@ -321,10 +353,7 @@ class _GenerateReportScreenState extends State<GenerateReportScreen> {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF4CAF50),
-                  Color(0xFF388E3C),
-                ],
+                colors: [Color(0xFF4CAF50), Color(0xFF388E3C)],
               ),
             ),
             child: const Icon(Icons.check, size: 12, color: Colors.white),
@@ -376,7 +405,7 @@ class _DropdownField3DState extends State<_DropdownField3D> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _isFocused 
+            color: _isFocused
                 ? const Color(0xFFB41839).withValues(alpha: 0.2)
                 : Colors.black.withValues(alpha: 0.06),
             blurRadius: _isFocused ? 15 : 10,
@@ -400,18 +429,12 @@ class _DropdownField3DState extends State<_DropdownField3D> {
                   ? const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFFB41839),
-                        Color(0xFF3F1B3D),
-                      ],
+                      colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                     )
                   : LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        Colors.grey[300]!,
-                        Colors.grey[400]!,
-                      ],
+                      colors: [Colors.grey[300]!, Colors.grey[400]!],
                     ),
               boxShadow: [
                 BoxShadow(
@@ -423,13 +446,12 @@ class _DropdownField3DState extends State<_DropdownField3D> {
                 ),
               ],
             ),
-            child: Icon(
-              widget.icon,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: Icon(widget.icon, color: Colors.white, size: 20),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -440,10 +462,7 @@ class _DropdownField3DState extends State<_DropdownField3D> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-              color: Color(0xFFB41839),
-              width: 2,
-            ),
+            borderSide: const BorderSide(color: Color(0xFFB41839), width: 2),
           ),
           labelStyle: TextStyle(
             color: _isFocused ? const Color(0xFFB41839) : Colors.grey[600],
@@ -504,7 +523,7 @@ class _DateField3DState extends State<_DateField3D> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: _isFocused 
+              color: _isFocused
                   ? const Color(0xFFB41839).withValues(alpha: 0.2)
                   : Colors.black.withValues(alpha: 0.06),
               blurRadius: _isFocused ? 15 : 10,
@@ -518,9 +537,7 @@ class _DateField3DState extends State<_DateField3D> {
             borderRadius: BorderRadius.circular(16),
             color: Colors.white,
             border: Border.all(
-              color: _isFocused 
-                  ? const Color(0xFFB41839)
-                  : Colors.grey[300]!,
+              color: _isFocused ? const Color(0xFFB41839) : Colors.grey[300]!,
               width: _isFocused ? 2 : 1,
             ),
           ),
@@ -536,18 +553,12 @@ class _DateField3DState extends State<_DateField3D> {
                       ? const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFFB41839),
-                            Color(0xFF3F1B3D),
-                          ],
+                          colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                         )
                       : LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Colors.grey[300]!,
-                            Colors.grey[400]!,
-                          ],
+                          colors: [Colors.grey[300]!, Colors.grey[400]!],
                         ),
                   boxShadow: [
                     BoxShadow(
@@ -559,11 +570,7 @@ class _DateField3DState extends State<_DateField3D> {
                     ),
                   ],
                 ),
-                child: Icon(
-                  widget.icon,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: Icon(widget.icon, color: Colors.white, size: 20),
               ),
               Expanded(
                 child: Column(
@@ -573,25 +580,25 @@ class _DateField3DState extends State<_DateField3D> {
                       widget.label,
                       style: TextStyle(
                         fontSize: 12,
-                        color: _isFocused 
+                        color: _isFocused
                             ? const Color(0xFFB41839)
                             : Colors.grey[600],
-                        fontWeight: _isFocused 
+                        fontWeight: _isFocused
                             ? FontWeight.w600
                             : FontWeight.normal,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.value != null 
+                      widget.value != null
                           ? _formatDate(widget.value)
                           : 'Sélectionner une date',
                       style: TextStyle(
                         fontSize: 16,
-                        color: widget.value != null 
+                        color: widget.value != null
                             ? Colors.black87
                             : Colors.grey[400],
-                        fontWeight: widget.value != null 
+                        fontWeight: widget.value != null
                             ? FontWeight.w500
                             : FontWeight.normal,
                       ),
@@ -599,11 +606,7 @@ class _DateField3DState extends State<_DateField3D> {
                   ],
                 ),
               ),
-              Icon(
-                Icons.calendar_month,
-                color: Colors.grey[400],
-                size: 20,
-              ),
+              Icon(Icons.calendar_month, color: Colors.grey[400], size: 20),
             ],
           ),
         ),
@@ -611,4 +614,3 @@ class _DateField3DState extends State<_DateField3D> {
     );
   }
 }
-

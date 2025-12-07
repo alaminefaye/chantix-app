@@ -8,8 +8,8 @@ part of 'employee_model.dart';
 
 EmployeeModel _$EmployeeModelFromJson(Map<String, dynamic> json) =>
     EmployeeModel(
-      id: (json['id'] as num).toInt(),
-      companyId: (json['company_id'] as num).toInt(),
+      id: EmployeeModel._intFromJson(json['id']),
+      companyId: EmployeeModel._intFromJson(json['company_id']),
       firstName: json['first_name'] as String,
       lastName: json['last_name'] as String,
       email: json['email'] as String?,
@@ -17,14 +17,16 @@ EmployeeModel _$EmployeeModelFromJson(Map<String, dynamic> json) =>
       position: json['position'] as String?,
       employeeNumber: json['employee_number'] as String?,
       hireDate: json['hire_date'] as String?,
-      hourlyRate: (json['hourly_rate'] as num?)?.toDouble(),
+      hourlyRate: EmployeeModel._doubleFromJsonNullable(json['hourly_rate']),
       address: json['address'] as String?,
       city: json['city'] as String?,
       country: json['country'] as String?,
       birthDate: json['birth_date'] as String?,
       idNumber: json['id_number'] as String?,
       notes: json['notes'] as String?,
-      isActive: json['is_active'] as bool? ?? true,
+      isActive: json['is_active'] == null
+          ? true
+          : EmployeeModel._boolFromJson(json['is_active']),
       createdAt: json['created_at'] as String?,
       updatedAt: json['updated_at'] as String?,
     );

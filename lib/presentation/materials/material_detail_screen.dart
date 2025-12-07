@@ -27,7 +27,28 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Détails du matériau'),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFB41839), // Rouge
+                Color(0xFF3F1B3D), // Violet foncé
+              ],
+            ),
+          ),
+        ),
+        title: const Text(
+          'Détails du matériau',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           Consumer<MaterialProvider>(
             builder: (context, materialProvider, _) {
@@ -35,7 +56,7 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
               if (material == null) return const SizedBox.shrink();
 
               return IconButton(
-                icon: const Icon(Icons.edit),
+                icon: const Icon(Icons.edit, color: Colors.white),
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
@@ -66,14 +87,14 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // En-tête
                 Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -83,7 +104,7 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
                               child: Text(
                                 material.name,
                                 style: const TextStyle(
-                                  fontSize: 24,
+                                  fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -91,16 +112,17 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
                             if (material.isLowStock)
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
+                                  horizontal: 8,
+                                  vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
                                   color: Colors.red.withAlpha((255 * 0.1).round()),
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Text(
                                   'Stock faible',
                                   style: TextStyle(
+                                    fontSize: 12,
                                     color: Colors.red,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -109,11 +131,11 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
                           ],
                         ),
                         if (material.category != null) ...[
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Text(
                             'Catégorie: ${material.category}',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 13,
                               color: Colors.grey[600],
                             ),
                           ),
@@ -122,7 +144,7 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Informations générales
                 _buildSectionTitle('Informations générales'),
@@ -135,7 +157,7 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
                   if (material.supplier != null)
                     _buildInfoRow('Fournisseur', material.supplier!),
                 ]),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Stock et prix
                 _buildSectionTitle('Stock et prix'),
@@ -157,7 +179,7 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
                   if (material.unit != null)
                     _buildInfoRow('Unité', material.unit!),
                 ]),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Statut
                 _buildSectionTitle('Statut'),
@@ -177,11 +199,11 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         title,
         style: const TextStyle(
-          fontSize: 18,
+          fontSize: 16,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -191,7 +213,7 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
   Widget _buildInfoCard(List<Widget> children) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
           children: children,
         ),
@@ -201,16 +223,16 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 120,
+            width: 110,
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w500,
               ),
@@ -220,7 +242,7 @@ class _MaterialDetailScreenState extends State<MaterialDetailScreen> {
             child: Text(
               value,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
             ),

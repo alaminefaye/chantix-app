@@ -8,6 +8,8 @@ import '../attendance/attendance_screen.dart';
 import '../progress/progress_screen.dart';
 import '../more/more_screen.dart';
 import '../widgets/animated_bottom_nav_bar.dart';
+import '../notifications/notifications_screen.dart';
+import '../notifications/notification_provider.dart';
 import 'dashboard_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -405,7 +407,6 @@ class _AnimatedNotificationButtonState extends State<_AnimatedNotificationButton
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _rotationAnimation;
-  final int _notificationCount = 3; // Nombre de notifications (exemple)
 
   @override
   void initState() {
@@ -429,10 +430,15 @@ class _AnimatedNotificationButtonState extends State<_AnimatedNotificationButton
       ),
     );
     
-    // Démarrer l'animation continue si il y a des notifications
-    if (_notificationCount > 0) {
-      _controller.repeat(reverse: true);
-    }
+    // Charger le nombre de notifications non lues et démarrer l'animation
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+      notificationProvider.loadUnreadCount().then((_) {
+        if (notificationProvider.hasUnread) {
+          _controller.repeat(reverse: true);
+        }
+      });
+    });
   }
 
   @override
@@ -448,12 +454,18 @@ class _AnimatedNotificationButtonState extends State<_AnimatedNotificationButton
     _controller.forward().then((_) {
       _controller.reverse().then((_) {
         // Reprendre l'animation continue si il y a des notifications
-        if (_notificationCount > 0) {
+        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+        if (notificationProvider.hasUnread) {
           _controller.repeat(reverse: true);
         }
       });
     });
-    // TODO: Naviguer vers la page de notifications
+    // Naviguer vers la page de notifications
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const NotificationsScreen(),
+      ),
+    );
   }
 
   @override
@@ -486,38 +498,46 @@ class _AnimatedNotificationButtonState extends State<_AnimatedNotificationButton
               },
             ),
             // Badge de notification
-            if (_notificationCount > 0)
-              Positioned(
-                right: 0,
-                top: 4,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.red.withValues(alpha: 0.5),
-                        blurRadius: 4,
-                        spreadRadius: 1,
+            Consumer<NotificationProvider>(
+              builder: (context, notificationProvider, _) {
+                if (notificationProvider.hasUnread) {
+                  return Positioned(
+                    right: 0,
+                    top: 4,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withValues(alpha: 0.5),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
-                  child: Text(
-                    _notificationCount > 9 ? '9+' : '$_notificationCount',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        notificationProvider.unreadCount > 9
+                            ? '9+'
+                            : '${notificationProvider.unreadCount}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           ],
         ),
       ),

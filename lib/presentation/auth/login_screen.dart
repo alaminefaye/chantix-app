@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'auth_provider.dart';
 import 'register_screen.dart';
 import '../dashboard/dashboard_screen.dart';
+import '../../data/services/permission_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -45,11 +46,16 @@ class _LoginScreenState extends State<LoginScreen> {
         if (success) {
           // S'assurer que l'utilisateur est bien chargé avant de naviguer
           await authProvider.loadUser();
-          
+
           if (mounted && authProvider.isAuthenticated) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const DashboardScreen()),
-            );
+            // Demander toutes les permissions nécessaires au démarrage
+            await PermissionService.requestAllPermissions();
+
+            if (mounted) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const DashboardScreen()),
+              );
+            }
           } else if (mounted) {
             // Si l'authentification a échoué, afficher une erreur
             ScaffoldMessenger.of(context).showSnackBar(

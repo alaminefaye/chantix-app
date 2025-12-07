@@ -19,8 +19,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AttendanceProvider>(context, listen: false)
-          .loadAttendances(widget.projectId);
+      Provider.of<AttendanceProvider>(
+        context,
+        listen: false,
+      ).loadAttendances(widget.projectId);
     });
   }
 
@@ -49,7 +51,28 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Historique des pointages'),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFB41839), // Rouge
+                Color(0xFF3F1B3D), // Violet foncé
+              ],
+            ),
+          ),
+        ),
+        title: const Text(
+          'Historique des pointages',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Consumer<AttendanceProvider>(
         builder: (context, attendanceProvider, _) {
@@ -79,7 +102,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           }
 
           final attendances = attendanceProvider.attendances;
-          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          final authProvider = Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          );
           final userId = authProvider.user?.id;
 
           final userAttendances = userId != null
@@ -87,12 +113,51 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               : <AttendanceModel>[];
 
           if (userAttendances.isEmpty) {
-            return const Center(
-              child: Text(
-                'Aucun pointage enregistré',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Icône avec design 3D
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Colors.grey[300]!, Colors.grey[400]!],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.access_time,
+                        size: 64,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    const Text(
+                      'Aucun pointage enregistré',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Vos pointages apparaîtront ici',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -119,14 +184,14 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                               backgroundColor: attendance.isAbsence
                                   ? Colors.orange
                                   : attendance.checkOutTime != null
-                                      ? Colors.green
-                                      : Colors.blue,
+                                  ? Colors.green
+                                  : Colors.blue,
                               child: Icon(
                                 attendance.isAbsence
                                     ? Icons.cancel
                                     : attendance.checkOutTime != null
-                                        ? Icons.check
-                                        : Icons.access_time,
+                                    ? Icons.check
+                                    : Icons.access_time,
                                 color: Colors.white,
                               ),
                             ),
@@ -146,8 +211,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    _formatDateTime(attendance.checkInTime ??
-                                        attendance.createdAt),
+                                    _formatDateTime(
+                                      attendance.checkInTime ??
+                                          attendance.createdAt,
+                                    ),
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey[600],
@@ -247,10 +314,7 @@ class _InfoItem extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
               Text(
                 value,
@@ -267,4 +331,3 @@ class _InfoItem extends StatelessWidget {
     );
   }
 }
-

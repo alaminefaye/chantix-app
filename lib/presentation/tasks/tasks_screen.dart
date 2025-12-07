@@ -5,6 +5,7 @@ import '../../data/models/task_model.dart';
 import '../../data/models/project_model.dart';
 import '../projects/project_provider.dart';
 import 'create_task_screen.dart';
+import 'task_detail_screen.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -20,13 +21,16 @@ class _TasksScreenState extends State<TasksScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
+      final projectProvider = Provider.of<ProjectProvider>(
+        context,
+        listen: false,
+      );
       final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-      
+
       if (projectProvider.projects.isEmpty) {
         projectProvider.loadProjects();
       }
-      
+
       taskProvider.loadTasks();
     });
   }
@@ -84,15 +88,17 @@ class _TasksScreenState extends State<TasksScreen> {
               return IconButton(
                 icon: const Icon(Icons.add),
                 onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => CreateTaskScreen(
-                        projectId: taskProvider.selectedProjectId!,
-                      ),
-                    ),
-                  ).then((_) {
-                    taskProvider.loadTasks();
-                  });
+                  Navigator.of(context)
+                      .push(
+                        MaterialPageRoute(
+                          builder: (_) => CreateTaskScreen(
+                            projectId: taskProvider.selectedProjectId!,
+                          ),
+                        ),
+                      )
+                      .then((_) {
+                        taskProvider.loadTasks();
+                      });
                 },
               );
             },
@@ -152,23 +158,24 @@ class _TasksScreenState extends State<TasksScreen> {
                               gradient: const LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFFB41839),
-                                  Color(0xFF3F1B3D),
-                                ],
+                                colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                               ),
                             ),
-                            child: const Icon(Icons.construction, color: Colors.white, size: 20),
+                            child: const Icon(
+                              Icons.construction,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.white,
                         ),
-                      items: projectProvider.projects.map((project) {
-                        return DropdownMenuItem<ProjectModel>(
-                          value: project,
-                          child: Text(project.name),
-                        );
-                      }).toList(),
+                        items: projectProvider.projects.map((project) {
+                          return DropdownMenuItem<ProjectModel>(
+                            value: project,
+                            child: Text(project.name),
+                          );
+                        }).toList(),
                         onChanged: (project) {
                           taskProvider.setSelectedProject(project?.id);
                           taskProvider.loadTasks();
@@ -296,10 +303,7 @@ class _TasksScreenState extends State<TasksScreen> {
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Colors.grey[300]!,
-                                Colors.grey[400]!,
-                              ],
+                              colors: [Colors.grey[300]!, Colors.grey[400]!],
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -345,10 +349,7 @@ class _TasksScreenState extends State<TasksScreen> {
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Colors.red[300]!,
-                                Colors.red[400]!,
-                              ],
+                              colors: [Colors.red[300]!, Colors.red[400]!],
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -383,14 +384,13 @@ class _TasksScreenState extends State<TasksScreen> {
                             gradient: const LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Color(0xFFB41839),
-                                Color(0xFF3F1B3D),
-                              ],
+                              colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFB41839).withValues(alpha: 0.4),
+                                color: const Color(
+                                  0xFFB41839,
+                                ).withValues(alpha: 0.4),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -441,10 +441,7 @@ class _TasksScreenState extends State<TasksScreen> {
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Colors.grey[300]!,
-                                Colors.grey[400]!,
-                              ],
+                              colors: [Colors.grey[300]!, Colors.grey[400]!],
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -486,7 +483,7 @@ class _TasksScreenState extends State<TasksScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           color: Colors.white,
-                            boxShadow: [
+                          boxShadow: [
                             BoxShadow(
                               color: Colors.black.withValues(alpha: 0.06),
                               blurRadius: 10,
@@ -499,170 +496,192 @@ class _TasksScreenState extends State<TasksScreen> {
                             ),
                           ],
                         ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(16),
-                          leading: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  task.statusColor,
-                                  task.statusColor.withValues(alpha: 0.8),
-                                ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: task.statusColor.withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => TaskDetailScreen(
+                                  taskId: task.id,
+                                  projectId: task.projectId,
                                 ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.task,
-                              color: Colors.white,
-                              size: 22,
-                            ),
-                          ),
-                          title: Text(
-                            task.title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(16),
+                            leading: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    task.statusColor,
+                                    task.statusColor.withValues(alpha: 0.8),
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: task.statusColor.withValues(
+                                      alpha: 0.3,
                                     ),
-                                    decoration: BoxDecoration(
-                                      color: task.statusColor.withAlpha((255 * 0.1).round()),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      task.statusLabel,
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: task.statusColor,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: task.priorityColor.withAlpha((255 * 0.1).round()),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      task.priorityLabel,
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: task.priorityColor,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
                                   ),
                                 ],
                               ),
-                              if (task.deadline != null) ...[
+                              child: const Icon(
+                                Icons.task,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                            ),
+                            title: Text(
+                              task.title,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    Icon(
-                                      task.isOverdue
-                                          ? Icons.warning
-                                          : task.isDueSoon
-                                              ? Icons.schedule
-                                              : Icons.calendar_today,
-                                      size: 12,
-                                      color: task.isOverdue
-                                          ? Colors.red
-                                          : task.isDueSoon
-                                              ? Colors.orange
-                                              : Colors.grey[600],
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: task.statusColor.withAlpha(
+                                          (255 * 0.1).round(),
+                                        ),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        task.statusLabel,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: task.statusColor,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Échéance: ${_formatDate(task.deadline!)}',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: task.isOverdue
-                                            ? Colors.red
-                                            : task.isDueSoon
-                                                ? Colors.orange
-                                                : Colors.grey[600],
-                                        fontWeight: task.isOverdue || task.isDueSoon
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: task.priorityColor.withAlpha(
+                                          (255 * 0.1).round(),
+                                        ),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        task.priorityLabel,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: task.priorityColor,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
-                              ],
-                              if (task.assignedEmployee != null) ...[
+                                if (task.deadline != null) ...[
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        task.isOverdue
+                                            ? Icons.warning
+                                            : task.isDueSoon
+                                            ? Icons.schedule
+                                            : Icons.calendar_today,
+                                        size: 12,
+                                        color: task.isOverdue
+                                            ? Colors.red
+                                            : task.isDueSoon
+                                            ? Colors.orange
+                                            : Colors.grey[600],
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Échéance: ${_formatDate(task.deadline!)}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: task.isOverdue
+                                              ? Colors.red
+                                              : task.isDueSoon
+                                              ? Colors.orange
+                                              : Colors.grey[600],
+                                          fontWeight:
+                                              task.isOverdue || task.isDueSoon
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                                if (task.assignedEmployee != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Assigné à: ${task.assignedEmployee!.fullName}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 8),
+                                Container(
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(4),
+                                    color: Colors.grey[200],
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.05,
+                                        ),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value: task.progress / 100,
+                                      minHeight: 8,
+                                      backgroundColor: Colors.transparent,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        task.statusColor,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Assigné à: ${task.assignedEmployee!.fullName}',
+                                  '${task.progress}%',
                                   style: TextStyle(
-                                    fontSize: 11,
+                                    fontSize: 10,
                                     color: Colors.grey[600],
                                   ),
                                 ),
                               ],
-                              const SizedBox(height: 8),
-                              Container(
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(4),
-                                  color: Colors.grey[200],
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.05),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(4),
-                                  child: LinearProgressIndicator(
-                                    value: task.progress / 100,
-                                    minHeight: 8,
-                                    backgroundColor: Colors.transparent,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      task.statusColor,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${task.progress}%',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                          trailing: Icon(
-                            Icons.chevron_right,
-                            color: Colors.grey[400],
+                            ),
+                            trailing: Icon(
+                              Icons.chevron_right,
+                              color: Colors.grey[400],
+                            ),
                           ),
                         ),
                       );
@@ -712,10 +731,7 @@ class _FilterChip3D extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFFB41839),
-                Color(0xFF3F1B3D),
-              ],
+              colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
             ),
             boxShadow: [
               BoxShadow(
@@ -729,11 +745,7 @@ class _FilterChip3D extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.check_circle,
-                size: 16,
-                color: Colors.white,
-              ),
+              const Icon(Icons.check_circle, size: 16, color: Colors.white),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(
@@ -785,4 +797,3 @@ class _FilterChip3D extends StatelessWidget {
     }
   }
 }
-

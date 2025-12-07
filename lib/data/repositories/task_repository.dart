@@ -18,8 +18,11 @@ class TaskRepository {
           ? '/v1/projects/$projectId/tasks'
           : '/v1/tasks';
 
-      final response = await _apiService.get(endpoint, queryParameters: queryParams);
-      
+      final response = await _apiService.get(
+        endpoint,
+        queryParameters: queryParams,
+      );
+
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] ?? response.data;
         return data.map((json) => TaskModel.fromJson(json)).toList();
@@ -37,7 +40,7 @@ class TaskRepository {
           : '/v1/tasks/$id';
 
       final response = await _apiService.get(endpoint);
-      
+
       if (response.statusCode == 200) {
         return TaskModel.fromJson(response.data);
       }
@@ -56,23 +59,25 @@ class TaskRepository {
         '/v1/projects/$projectId/tasks',
         data: data,
       );
-      
+
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return {
-          'success': true,
-          'task': TaskModel.fromJson(response.data),
-        };
+        // Handle different response structures
+        final taskData =
+            response.data is Map && response.data.containsKey('data')
+            ? response.data['data']
+            : response.data;
+
+        return {'success': true, 'task': TaskModel.fromJson(taskData)};
       }
-      
+
       return {
         'success': false,
-        'message': response.data['message'] ?? 'Erreur lors de la création de la tâche',
+        'message':
+            response.data['message'] ??
+            'Erreur lors de la création de la tâche',
       };
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      return {'success': false, 'message': e.toString()};
     }
   }
 
@@ -86,23 +91,19 @@ class TaskRepository {
         '/v1/projects/$projectId/tasks/$id',
         data: data,
       );
-      
+
       if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'task': TaskModel.fromJson(response.data),
-        };
+        return {'success': true, 'task': TaskModel.fromJson(response.data)};
       }
-      
+
       return {
         'success': false,
-        'message': response.data['message'] ?? 'Erreur lors de la mise à jour de la tâche',
+        'message':
+            response.data['message'] ??
+            'Erreur lors de la mise à jour de la tâche',
       };
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      return {'success': false, 'message': e.toString()};
     }
   }
 

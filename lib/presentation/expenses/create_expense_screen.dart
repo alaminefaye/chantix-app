@@ -104,31 +104,40 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
     final expenseProvider =
         Provider.of<ExpenseProvider>(context, listen: false);
 
-    final data = {
+    // Construire les données en ne gardant que les valeurs non-null
+    final data = <String, dynamic>{
       'type': _type,
       'title': _titleController.text.trim(),
-      'description': _descriptionController.text.trim().isEmpty
-          ? null
-          : _descriptionController.text.trim(),
       'amount': double.parse(_amountController.text.trim()),
       'expense_date': _expenseDate!.toIso8601String().split('T')[0],
-      'supplier': _supplierController.text.trim().isEmpty
-          ? null
-          : _supplierController.text.trim(),
-      'invoice_number': _invoiceNumberController.text.trim().isEmpty
-          ? null
-          : _invoiceNumberController.text.trim(),
-      'invoice_date': _invoiceDate?.toIso8601String().split('T')[0],
-      'material_id': _type == 'materiaux' ? _selectedMaterialId : null,
-      'employee_id': _type == 'main_oeuvre' ? _selectedEmployeeId : null,
-      'notes': _notesController.text.trim().isEmpty
-          ? null
-          : _notesController.text.trim(),
       'is_paid': _isPaid,
-      'paid_date': _isPaid && _paidDate != null
-          ? _paidDate!.toIso8601String().split('T')[0]
-          : null,
     };
+
+    // Ajouter les champs optionnels seulement s'ils ne sont pas vides
+    if (_descriptionController.text.trim().isNotEmpty) {
+      data['description'] = _descriptionController.text.trim();
+    }
+    if (_supplierController.text.trim().isNotEmpty) {
+      data['supplier'] = _supplierController.text.trim();
+    }
+    if (_invoiceNumberController.text.trim().isNotEmpty) {
+      data['invoice_number'] = _invoiceNumberController.text.trim();
+    }
+    if (_invoiceDate != null) {
+      data['invoice_date'] = _invoiceDate!.toIso8601String().split('T')[0];
+    }
+    if (_type == 'materiaux' && _selectedMaterialId != null) {
+      data['material_id'] = _selectedMaterialId;
+    }
+    if (_type == 'main_oeuvre' && _selectedEmployeeId != null) {
+      data['employee_id'] = _selectedEmployeeId;
+    }
+    if (_notesController.text.trim().isNotEmpty) {
+      data['notes'] = _notesController.text.trim();
+    }
+    if (_isPaid && _paidDate != null) {
+      data['paid_date'] = _paidDate!.toIso8601String().split('T')[0];
+    }
 
     final success = await expenseProvider.createExpense(
       projectId: widget.projectId,
@@ -145,12 +154,16 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
       );
       Navigator.of(context).pop();
     } else if (mounted) {
+      final errorMessage = expenseProvider.errorMessage ?? 'Erreur lors de la création';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            expenseProvider.errorMessage ?? 'Erreur lors de la création',
+            errorMessage,
+            maxLines: 5,
+            overflow: TextOverflow.ellipsis,
           ),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
         ),
       );
     }

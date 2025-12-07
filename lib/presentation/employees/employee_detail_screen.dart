@@ -17,8 +17,10 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<EmployeeProvider>(context, listen: false)
-          .loadEmployee(widget.employeeId);
+      Provider.of<EmployeeProvider>(
+        context,
+        listen: false,
+      ).loadEmployee(widget.employeeId);
     });
   }
 
@@ -27,7 +29,28 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Détails de l\'employé'),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFB41839), // Rouge
+                Color(0xFF3F1B3D), // Violet foncé
+              ],
+            ),
+          ),
+        ),
+        title: const Text(
+          'Détails de l\'employé',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           Consumer<EmployeeProvider>(
             builder: (context, employeeProvider, _) {
@@ -35,17 +58,18 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
               if (employee == null) return const SizedBox.shrink();
 
               return IconButton(
-                icon: const Icon(Icons.edit),
+                icon: const Icon(Icons.edit, color: Colors.white),
                 onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => CreateEmployeeScreen(
-                        employee: employee,
-                      ),
-                    ),
-                  ).then((_) {
-                    employeeProvider.loadEmployee(widget.employeeId);
-                  });
+                  Navigator.of(context)
+                      .push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              CreateEmployeeScreen(employee: employee),
+                        ),
+                      )
+                      .then((_) {
+                        employeeProvider.loadEmployee(widget.employeeId);
+                      });
                 },
               );
             },
@@ -60,31 +84,42 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
 
           final employee = employeeProvider.selectedEmployee;
           if (employee == null) {
-            return const Center(
-              child: Text('Employé non trouvé'),
-            );
+            return const Center(child: Text('Employé non trouvé'));
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // En-tête
-                Card(
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Row(
                       children: [
                         CircleAvatar(
                           radius: 30,
-                          backgroundColor: Colors.green.withAlpha((255 * 0.2).round()),
+                          backgroundColor: const Color(
+                            0xFFB41839,
+                          ).withAlpha((255 * 0.2).round()),
                           child: Text(
                             employee.firstName[0].toUpperCase(),
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: Colors.green,
+                              color: Color(0xFFB41839),
                             ),
                           ),
                         ),
@@ -96,7 +131,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                               Text(
                                 employee.fullName,
                                 style: const TextStyle(
-                                  fontSize: 24,
+                                  fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -105,7 +140,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                                 Text(
                                   employee.position!,
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     color: Colors.grey[600],
                                   ),
                                 ),
@@ -117,7 +152,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Informations personnelles
                 _buildSectionTitle('Informations personnelles'),
@@ -129,31 +164,42 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                   if (employee.phone != null)
                     _buildInfoRow('Téléphone', employee.phone!),
                   if (employee.birthDate != null)
-                    _buildInfoRow('Date de naissance', _formatDate(employee.birthDate!)),
+                    _buildInfoRow(
+                      'Date de naissance',
+                      _formatDate(employee.birthDate!),
+                    ),
                   if (employee.idNumber != null)
                     _buildInfoRow('Numéro d\'identité', employee.idNumber!),
                 ]),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Informations professionnelles
                 _buildSectionTitle('Informations professionnelles'),
                 _buildInfoCard([
                   if (employee.employeeNumber != null)
-                    _buildInfoRow('Numéro d\'employé', employee.employeeNumber!),
+                    _buildInfoRow(
+                      'Numéro d\'employé',
+                      employee.employeeNumber!,
+                    ),
                   if (employee.position != null)
                     _buildInfoRow('Poste', employee.position!),
                   if (employee.hireDate != null)
-                    _buildInfoRow('Date d\'embauche', _formatDate(employee.hireDate!)),
+                    _buildInfoRow(
+                      'Date d\'embauche',
+                      _formatDate(employee.hireDate!),
+                    ),
                   if (employee.hourlyRate != null)
                     _buildInfoRow(
                       'Taux horaire',
                       '${employee.hourlyRate!.toStringAsFixed(2)} FCFA/h',
                     ),
                 ]),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
                 // Adresse
-                if (employee.address != null || employee.city != null || employee.country != null) ...[
+                if (employee.address != null ||
+                    employee.city != null ||
+                    employee.country != null) ...[
                   _buildSectionTitle('Adresse'),
                   _buildInfoCard([
                     if (employee.address != null)
@@ -163,16 +209,14 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
                     if (employee.country != null)
                       _buildInfoRow('Pays', employee.country!),
                   ]),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                 ],
 
                 // Notes
                 if (employee.notes != null && employee.notes!.isNotEmpty) ...[
                   _buildSectionTitle('Notes'),
-                  _buildInfoCard([
-                    _buildInfoRow('Notes', employee.notes!),
-                  ]),
-                  const SizedBox(height: 16),
+                  _buildInfoCard([_buildInfoRow('Notes', employee.notes!)]),
+                  const SizedBox(height: 12),
                 ],
 
                 // Statut
@@ -193,13 +237,10 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -207,26 +248,24 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
   Widget _buildInfoCard(List<Widget> children) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: children,
-        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(children: children),
       ),
     );
   }
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 120,
+            width: 110,
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w500,
               ),
@@ -235,10 +274,7 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -255,4 +291,3 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
     }
   }
 }
-

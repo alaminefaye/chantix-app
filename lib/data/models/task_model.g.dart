@@ -7,10 +7,10 @@ part of 'task_model.dart';
 // **************************************************************************
 
 TaskModel _$TaskModelFromJson(Map<String, dynamic> json) => TaskModel(
-      id: (json['id'] as num).toInt(),
-      projectId: (json['project_id'] as num).toInt(),
-      createdBy: (json['created_by'] as num).toInt(),
-      assignedTo: (json['assigned_to'] as num?)?.toInt(),
+      id: TaskModel._intFromJson(json['id']),
+      projectId: TaskModel._intFromJson(json['project_id']),
+      createdBy: TaskModel._intFromJson(json['created_by']),
+      assignedTo: TaskModel._intNullableFromJson(json['assigned_to']),
       title: json['title'] as String,
       description: json['description'] as String?,
       category: json['category'] as String?,
@@ -18,7 +18,9 @@ TaskModel _$TaskModelFromJson(Map<String, dynamic> json) => TaskModel(
       priority: json['priority'] as String,
       startDate: json['start_date'] as String?,
       deadline: json['deadline'] as String?,
-      progress: (json['progress'] as num?)?.toInt() ?? 0,
+      progress: json['progress'] == null
+          ? 0
+          : TaskModel._progressFromJson(json['progress']),
       notes: json['notes'] as String?,
       createdAt: json['created_at'] as String?,
       updatedAt: json['updated_at'] as String?,

@@ -58,9 +58,27 @@ class ExpenseRepository {
     File? invoiceFile,
   }) async {
     try {
+      // Nettoyer les données : retirer les valeurs null pour les champs optionnels
+      final cleanedData = <String, dynamic>{};
+      data.forEach((key, value) {
+        if (value != null) {
+          cleanedData[key] = value;
+        }
+      });
+
       if (invoiceFile != null) {
         // Utiliser FormData pour l'upload de fichier
-        final formData = FormData.fromMap(data);
+        // Convertir les booléens en int pour FormData (Laravel accepte 0/1)
+        final formDataMap = <String, dynamic>{};
+        cleanedData.forEach((key, value) {
+          if (value is bool) {
+            formDataMap[key] = value ? 1 : 0;
+          } else {
+            formDataMap[key] = value;
+          }
+        });
+        
+        final formData = FormData.fromMap(formDataMap);
         formData.files.add(
           MapEntry(
             'invoice_file',
@@ -79,19 +97,27 @@ class ExpenseRepository {
         if (response.statusCode == 200 || response.statusCode == 201) {
           return {
             'success': true,
-            'expense': ExpenseModel.fromJson(response.data),
+            'expense': ExpenseModel.fromJson(response.data['data'] ?? response.data),
           };
         }
       } else {
+        // Pour les requêtes JSON, garder les booléens comme bool
+        final jsonData = <String, dynamic>{};
+        data.forEach((key, value) {
+          if (value != null) {
+            jsonData[key] = value;
+          }
+        });
+
         final response = await _apiService.post(
           '/v1/projects/$projectId/expenses',
-          data: data,
+          data: jsonData,
         );
 
         if (response.statusCode == 200 || response.statusCode == 201) {
           return {
             'success': true,
-            'expense': ExpenseModel.fromJson(response.data),
+            'expense': ExpenseModel.fromJson(response.data['data'] ?? response.data),
           };
         }
       }
@@ -101,9 +127,34 @@ class ExpenseRepository {
         'message': 'Erreur lors de la création de la dépense',
       };
     } catch (e) {
+      String errorMessage = 'Erreur lors de la création de la dépense';
+      
+      if (e is DioException && e.response != null) {
+        final responseData = e.response!.data;
+        if (responseData is Map<String, dynamic>) {
+          // Extraire les messages d'erreur de validation
+          if (responseData.containsKey('errors')) {
+            final errors = responseData['errors'] as Map<String, dynamic>;
+            final errorList = <String>[];
+            errors.forEach((key, value) {
+              if (value is List) {
+                errorList.addAll(value.map((e) => e.toString()));
+              } else {
+                errorList.add(value.toString());
+              }
+            });
+            errorMessage = errorList.join('\n');
+          } else if (responseData.containsKey('message')) {
+            errorMessage = responseData['message'].toString();
+          }
+        }
+      } else {
+        errorMessage = e.toString();
+      }
+
       return {
         'success': false,
-        'message': e.toString(),
+        'message': errorMessage,
       };
     }
   }

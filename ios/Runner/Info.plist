@@ -2,10 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Chantix App</string>
+	<string>Chantix</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -24,6 +26,22 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Cette application a besoin d'accéder à la caméra pour prendre des photos et enregistrer des vidéos de l'avancement des projets.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string></string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string></string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Cette application a besoin de votre localisation pour enregistrer l'emplacement des mises à jour de projet.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Cette application a besoin d'accéder au microphone pour enregistrer des rapports audio.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Cette application a besoin d'accéder à votre galerie photo pour sauvegarder des images.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Cette application a besoin d'accéder à votre galerie photo pour sélectionner des images et vidéos.</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -41,19 +59,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	<key>NSCameraUsageDescription</key>
-	<string>Cette application a besoin d'accéder à la caméra pour prendre des photos et enregistrer des vidéos de l'avancement des projets.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Cette application a besoin d'accéder à votre galerie photo pour sélectionner des images et vidéos.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Cette application a besoin d'accéder à votre galerie photo pour sauvegarder des images.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Cette application a besoin d'accéder au microphone pour enregistrer des rapports audio.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Cette application a besoin de votre localisation pour enregistrer l'emplacement des mises à jour de projet.</string>
 </dict>
 </plist>

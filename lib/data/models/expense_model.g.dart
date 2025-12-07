@@ -7,9 +7,9 @@ part of 'expense_model.dart';
 // **************************************************************************
 
 ExpenseModel _$ExpenseModelFromJson(Map<String, dynamic> json) => ExpenseModel(
-      id: (json['id'] as num).toInt(),
-      projectId: (json['project_id'] as num).toInt(),
-      createdBy: (json['created_by'] as num).toInt(),
+      id: ExpenseModel._intFromJson(json['id']),
+      projectId: ExpenseModel._intFromJson(json['project_id']),
+      createdBy: ExpenseModel._intFromJson(json['created_by']),
       type: json['type'] as String,
       title: json['title'] as String,
       description: json['description'] as String?,
@@ -19,8 +19,8 @@ ExpenseModel _$ExpenseModelFromJson(Map<String, dynamic> json) => ExpenseModel(
       invoiceNumber: json['invoice_number'] as String?,
       invoiceDate: json['invoice_date'] as String?,
       invoiceFile: json['invoice_file'] as String?,
-      materialId: (json['material_id'] as num?)?.toInt(),
-      employeeId: (json['employee_id'] as num?)?.toInt(),
+      materialId: ExpenseModel._intFromJsonNullable(json['material_id']),
+      employeeId: ExpenseModel._intFromJsonNullable(json['employee_id']),
       notes: json['notes'] as String?,
       isPaid: json['is_paid'] as bool? ?? false,
       paidDate: json['paid_date'] as String?,

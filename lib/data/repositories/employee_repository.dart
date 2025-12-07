@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
 import '../models/employee_model.dart';
 import '../services/api_service.dart';
 
@@ -8,12 +10,75 @@ class EmployeeRepository {
     try {
       final response = await _apiService.get('/v1/employees', queryParameters: filters);
       
+      debugPrint('=== RÉPONSE API EMPLOYÉS ===');
+      debugPrint('Status code: ${response.statusCode}');
+      debugPrint('Response data: ${response.data}');
+      debugPrint('Response data type: ${response.data.runtimeType}');
+      
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['data'] ?? response.data;
-        return data.map((json) => EmployeeModel.fromJson(json)).toList();
+        // Vérifier la structure de la réponse
+        dynamic responseData = response.data;
+        
+        // Si c'est une Map avec 'success' et 'data'
+        if (responseData is Map<String, dynamic>) {
+          if (responseData.containsKey('success') && responseData['success'] == true) {
+            final data = responseData['data'];
+            if (data is List) {
+              debugPrint('Données trouvées dans response.data[\'data\']: ${data.length} employés');
+              return data.map((json) {
+                try {
+                  return EmployeeModel.fromJson(json);
+                } catch (e) {
+                  debugPrint('Erreur lors du parsing d\'un employé: $e');
+                  debugPrint('JSON: $json');
+                  rethrow;
+                }
+              }).toList();
+            } else if (data != null) {
+              debugPrint('response.data[\'data\'] n\'est pas une liste: $data');
+            }
+          } else {
+            debugPrint('Response success = false ou absent');
+            debugPrint('Message: ${responseData['message']}');
+          }
+        }
+        
+        // Si c'est directement une liste
+        if (responseData is List) {
+          debugPrint('Données trouvées directement comme liste: ${responseData.length} employés');
+          return responseData.map((json) {
+            try {
+              return EmployeeModel.fromJson(json);
+            } catch (e) {
+              debugPrint('Erreur lors du parsing d\'un employé: $e');
+              debugPrint('JSON: $json');
+              rethrow;
+            }
+          }).toList();
+        }
+        
+        debugPrint('Format de réponse non reconnu');
+        return [];
+      }
+      
+      debugPrint('Status code non 200: ${response.statusCode}');
+      if (response.data is Map) {
+        debugPrint('Message d\'erreur: ${response.data['message']}');
       }
       return [];
-    } catch (e) {
+    } on DioException catch (e) {
+      debugPrint('=== ERREUR DIO ===');
+      debugPrint('Type: ${e.type}');
+      debugPrint('Message: ${e.message}');
+      debugPrint('Response: ${e.response?.data}');
+      debugPrint('Status code: ${e.response?.statusCode}');
+      if (e.response?.statusCode == 400) {
+        debugPrint('Erreur 400: L\'utilisateur n\'a peut-être pas de company_id défini');
+      }
+      return [];
+    } catch (e, stackTrace) {
+      debugPrint('Erreur lors de la récupération des employés: $e');
+      debugPrint('Stack trace: $stackTrace');
       return [];
     }
   }

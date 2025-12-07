@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'report_provider.dart';
 import '../../data/models/report_model.dart';
@@ -20,17 +21,30 @@ class _ReportsScreenState extends State<ReportsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final projectProvider = Provider.of<ProjectProvider>(context, listen: false);
-      final reportProvider = Provider.of<ReportProvider>(context, listen: false);
-      
+      final projectProvider = Provider.of<ProjectProvider>(
+        context,
+        listen: false,
+      );
+      final reportProvider = Provider.of<ReportProvider>(
+        context,
+        listen: false,
+      );
+
       if (projectProvider.projects.isEmpty) {
         projectProvider.loadProjects();
       }
-      
+
       if (reportProvider.selectedProjectId != null) {
         reportProvider.loadReports();
       }
     });
+  }
+
+  Future<void> _refreshReports() async {
+    final reportProvider = Provider.of<ReportProvider>(context, listen: false);
+    if (reportProvider.selectedProjectId != null) {
+      await reportProvider.loadReports();
+    }
   }
 
   Future<void> _downloadReport(ReportModel report) async {
@@ -93,15 +107,23 @@ class _ReportsScreenState extends State<ReportsScreen> {
               return IconButton(
                 icon: const Icon(Icons.add),
                 onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => GenerateReportScreen(
-                        projectId: reportProvider.selectedProjectId!,
-                      ),
-                    ),
-                  ).then((_) {
-                    reportProvider.loadReports();
-                  });
+                  Navigator.of(context)
+                      .push(
+                        MaterialPageRoute(
+                          builder: (_) => GenerateReportScreen(
+                            projectId: reportProvider.selectedProjectId!,
+                          ),
+                        ),
+                      )
+                      .then((result) {
+                        // Recharger les rapports quand on revient de la génération
+                        if (result == true && mounted) {
+                          _refreshReports();
+                        } else if (mounted) {
+                          // Recharger même si pas de résultat explicite
+                          _refreshReports();
+                        }
+                      });
                 },
               );
             },
@@ -161,26 +183,40 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               gradient: const LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFFB41839),
-                                  Color(0xFF3F1B3D),
-                                ],
+                                colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                               ),
                             ),
-                            child: const Icon(Icons.construction, color: Colors.white, size: 20),
+                            child: const Icon(
+                              Icons.construction,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.white,
                         ),
-                      items: projectProvider.projects.map((project) {
-                        return DropdownMenuItem<ProjectModel>(
-                          value: project,
-                          child: Text(project.name),
-                        );
-                      }).toList(),
+                        items: projectProvider.projects.map((project) {
+                          return DropdownMenuItem<ProjectModel>(
+                            value: project,
+                            child: Text(project.name),
+                          );
+                        }).toList(),
                         onChanged: (project) {
+                          if (kDebugMode) {
+                            print(
+                              'Projet changé: ${project?.id} - ${project?.name}',
+                            );
+                          }
                           reportProvider.setSelectedProject(project?.id);
-                          reportProvider.loadReports();
+                          if (project != null) {
+                            reportProvider.loadReports();
+                          } else {
+                            if (kDebugMode) {
+                              print(
+                                'Aucun projet sélectionné, vidage de la liste des rapports',
+                              );
+                            }
+                          }
                         },
                       ),
                     );
@@ -206,10 +242,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Colors.grey[300]!,
-                                Colors.grey[400]!,
-                              ],
+                              colors: [Colors.grey[300]!, Colors.grey[400]!],
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -255,10 +288,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Colors.red[300]!,
-                                Colors.red[400]!,
-                              ],
+                              colors: [Colors.red[300]!, Colors.red[400]!],
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -293,14 +323,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             gradient: const LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Color(0xFFB41839),
-                                Color(0xFF3F1B3D),
-                              ],
+                              colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFB41839).withValues(alpha: 0.4),
+                                color: const Color(
+                                  0xFFB41839,
+                                ).withValues(alpha: 0.4),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -337,6 +366,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   );
                 }
 
+                // Debug: Afficher le nombre de rapports
+                if (kDebugMode) {
+                  print(
+                    'ReportsScreen: Nombre de rapports: ${reportProvider.reports.length}',
+                  );
+                  print(
+                    'ReportsScreen: Projet sélectionné: ${reportProvider.selectedProjectId}',
+                  );
+                  print(
+                    'ReportsScreen: En chargement: ${reportProvider.isLoading}',
+                  );
+                }
+
                 if (reportProvider.reports.isEmpty) {
                   return Center(
                     child: Column(
@@ -349,10 +391,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Colors.grey[300]!,
-                                Colors.grey[400]!,
-                              ],
+                              colors: [Colors.grey[300]!, Colors.grey[400]!],
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -384,14 +423,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             gradient: const LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Color(0xFFB41839),
-                                Color(0xFF3F1B3D),
-                              ],
+                              colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFB41839).withValues(alpha: 0.4),
+                                color: const Color(
+                                  0xFFB41839,
+                                ).withValues(alpha: 0.4),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -399,13 +437,24 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           ),
                           child: ElevatedButton.icon(
                             onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => GenerateReportScreen(
-                                    projectId: reportProvider.selectedProjectId!,
-                                  ),
-                                ),
-                              );
+                              Navigator.of(context)
+                                  .push(
+                                    MaterialPageRoute(
+                                      builder: (_) => GenerateReportScreen(
+                                        projectId:
+                                            reportProvider.selectedProjectId!,
+                                      ),
+                                    ),
+                                  )
+                                  .then((result) {
+                                    // Recharger les rapports quand on revient de la génération
+                                    if (result == true && mounted) {
+                                      _refreshReports();
+                                    } else if (mounted) {
+                                      // Recharger même si pas de résultat explicite
+                                      _refreshReports();
+                                    }
+                                  });
                             },
                             icon: const Icon(Icons.add, color: Colors.white),
                             label: const Text(
@@ -467,10 +516,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               gradient: const LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFF5C6BC0),
-                                  Color(0xFF3F51B5),
-                                ],
+                                colors: [Color(0xFF5C6BC0), Color(0xFF3F51B5)],
                               ),
                               boxShadow: [
                                 BoxShadow(
@@ -536,14 +582,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFFB41839).withValues(alpha: 0.3),
+                                        color: const Color(
+                                          0xFFB41839,
+                                        ).withValues(alpha: 0.3),
                                         blurRadius: 6,
                                         offset: const Offset(0, 2),
                                       ),
                                     ],
                                   ),
                                   child: IconButton(
-                                    icon: const Icon(Icons.download, color: Colors.white),
+                                    icon: const Icon(
+                                      Icons.download,
+                                      color: Colors.white,
+                                    ),
                                     onPressed: () => _downloadReport(report),
                                   ),
                                 )
@@ -573,5 +624,3 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
   }
 }
-
-

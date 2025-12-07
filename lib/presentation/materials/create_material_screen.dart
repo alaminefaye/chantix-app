@@ -36,6 +36,16 @@ class _CreateMaterialScreenState extends State<CreateMaterialScreen> {
     'Lot',
   ];
 
+  final List<Map<String, String>> _categories = [
+    {'value': 'ciment', 'label': 'Ciment'},
+    {'value': 'acier', 'label': 'Acier'},
+    {'value': 'bois', 'label': 'Bois'},
+    {'value': 'electricite', 'label': 'Électricité'},
+    {'value': 'plomberie', 'label': 'Plomberie'},
+    {'value': 'peinture', 'label': 'Peinture'},
+    {'value': 'autres', 'label': 'Autres'},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -189,11 +199,24 @@ class _CreateMaterialScreenState extends State<CreateMaterialScreen> {
                 textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: 12),
-              _FormField3D(
-                controller: _categoryController,
+              _DropdownField3D(
+                value: _categoryController.text.isEmpty ? null : _categoryController.text,
                 label: 'Catégorie',
                 icon: Icons.category,
-                textInputAction: TextInputAction.next,
+                items: [
+                  const DropdownMenuItem(value: null, child: Text('Sélectionner une catégorie')),
+                  ..._categories.map((category) {
+                    return DropdownMenuItem(
+                      value: category['value'],
+                      child: Text(category['label']!),
+                    );
+                  }),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _categoryController.text = value ?? '';
+                  });
+                },
               ),
               const SizedBox(height: 12),
               _DropdownField3D(
@@ -487,7 +510,7 @@ class _DropdownField3DState extends State<_DropdownField3D> {
         ],
       ),
       child: DropdownButtonFormField<String>(
-        initialValue: widget.value,
+        value: widget.value,
         decoration: InputDecoration(
           labelText: widget.label,
           filled: true,
@@ -551,6 +574,10 @@ class _DropdownField3DState extends State<_DropdownField3D> {
             fontWeight: _isFocused ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
+        hint: widget.value == null ? Text(
+          'Sélectionner une catégorie',
+          style: TextStyle(color: Colors.grey[600]),
+        ) : null,
         items: widget.items,
         onChanged: (value) {
           setState(() => _isFocused = false);
