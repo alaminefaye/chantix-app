@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
@@ -41,6 +43,8 @@ class _CreateProgressUpdateScreenState
   final List<String> _existingVideos = []; // URLs des vidéos existantes
   File? _audioFile;
   bool _isRecording = false;
+  Duration _recordingDuration = Duration.zero;
+  Timer? _recordingTimer;
   Position? _position;
   bool _isLoading = false;
 
@@ -112,7 +116,31 @@ class _CreateProgressUpdateScreenState
   void dispose() {
     _descriptionController.dispose();
     _audioRecorder.dispose();
+    _recordingTimer?.cancel();
     super.dispose();
+  }
+
+  void _startRecordingTimer() {
+    _recordingDuration = Duration.zero;
+    _recordingTimer?.cancel();
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted && _isRecording) {
+        setState(() {
+          _recordingDuration = Duration(
+            seconds: _recordingDuration.inSeconds + 1,
+          );
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$minutes:$seconds';
   }
 
   Future<void> _requestLocationPermission() async {
@@ -310,6 +338,9 @@ class _CreateProgressUpdateScreenState
             _audioFile = File(path);
           });
 
+          // Démarrer le timer pour afficher la durée
+          _startRecordingTimer();
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Enregistrement audio démarré'),
@@ -381,6 +412,7 @@ class _CreateProgressUpdateScreenState
                       _isRecording = true;
                       _audioFile = File(path);
                     });
+                    _startRecordingTimer();
                   }
                   return;
                 } catch (e2) {
@@ -411,6 +443,7 @@ class _CreateProgressUpdateScreenState
                   _isRecording = true;
                   _audioFile = File(path);
                 });
+                _startRecordingTimer();
               }
               return;
             } catch (e2) {
@@ -452,16 +485,34 @@ class _CreateProgressUpdateScreenState
 
   Future<void> _stopRecording() async {
     try {
+      // Arrêter le timer
+      _recordingTimer?.cancel();
+
       final path = await _audioRecorder.stop();
       setState(() {
         _isRecording = false;
         if (path != null) {
           _audioFile = File(path);
         }
+        _recordingDuration = Duration.zero;
       });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Enregistrement arrêté (${_formatDuration(_recordingDuration)})',
+            ),
+            backgroundColor: Colors.blue,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     } catch (e) {
+      _recordingTimer?.cancel();
       setState(() {
         _isRecording = false;
+        _recordingDuration = Duration.zero;
       });
       if (mounted) {
         ScaffoldMessenger.of(
@@ -1046,32 +1097,99 @@ class _CreateProgressUpdateScreenState
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  onPressed: _isRecording
-                                      ? _stopRecording
-                                      : _startRecording,
-                                  icon: Icon(
-                                    _isRecording ? Icons.stop : Icons.mic,
+                          // Affichage pendant l'enregistrement
+                          if (_isRecording) ...[
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.red[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.red[300]!,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  // Animation et temps
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      // Animation d'ondes sonores
+                                      _RecordingAnimation(),
+                                      const SizedBox(width: 16),
+                                      // Temps écoulé
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Enregistrement en cours',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.red[700],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            _formatDuration(_recordingDuration),
+                                            style: TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.red[900],
+                                              fontFeatures: [
+                                                const FontFeature.tabularFigures(),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
-                                  label: Text(
-                                    _isRecording ? 'Arrêter' : 'Enregistrer',
+                                  const SizedBox(height: 16),
+                                  // Bouton arrêter
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: _stopRecording,
+                                      icon: const Icon(Icons.stop),
+                                      label: const Text(
+                                        'Arrêter l\'enregistrement',
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: _isRecording
-                                        ? Colors.red
-                                        : Colors.green,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
+                                ],
+                              ),
+                            ),
+                          ] else ...[
+                            // Bouton pour démarrer l'enregistrement
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: _startRecording,
+                                    icon: const Icon(Icons.mic),
+                                    label: const Text('Enregistrer'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
                           if (_audioFile != null && !_isRecording)
                             Padding(
                               padding: const EdgeInsets.only(top: 8),
@@ -1158,6 +1276,65 @@ class _CreateProgressUpdateScreenState
           ),
         ),
       ),
+    );
+  }
+}
+
+// Widget d'animation pour l'enregistrement audio
+class _RecordingAnimation extends StatefulWidget {
+  const _RecordingAnimation();
+
+  @override
+  State<_RecordingAnimation> createState() => _RecordingAnimationState();
+}
+
+class _RecordingAnimationState extends State<_RecordingAnimation>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+
+    _animation = Tween<double>(
+      begin: 0.8,
+      end: 1.2,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.red,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withOpacity(0.5),
+                blurRadius: 20 * _animation.value,
+                spreadRadius: 5 * _animation.value,
+              ),
+            ],
+          ),
+          child: const Icon(Icons.mic, color: Colors.white, size: 30),
+        );
+      },
     );
   }
 }

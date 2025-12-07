@@ -507,9 +507,14 @@ class ProgressUpdateDetailScreen extends StatelessWidget {
                       Builder(
                         builder: (context) {
                           // Utiliser l'endpoint API pour télécharger l'audio avec authentification
+                          // La route est: /api/v1/projects/{project}/progress/{progress}/audio
+                          // ApiConfig.baseUrl contient déjà /api, donc on ajoute /v1
                           final audioUrl =
-                              '${ApiConfig.baseUrl}/projects/$projectId/progress/${update.id}/audio';
-                          debugPrint('URL audio API: $audioUrl');
+                              '${ApiConfig.baseUrl}/v1/projects/$projectId/progress/${update.id}/audio';
+                          debugPrint('URL audio API complète: $audioUrl');
+                          debugPrint(
+                            'Project ID: $projectId, Progress ID: ${update.id}',
+                          );
                           return AudioPlayerWidget(
                             audioUrl: audioUrl,
                             requiresAuth: true,
@@ -1091,6 +1096,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
   Future<void> _downloadAndPlayAudio() async {
     try {
       debugPrint('Téléchargement de l\'audio avec authentification...');
+      debugPrint('URL à télécharger: ${widget.audioUrl}');
 
       // Obtenir le token d'authentification depuis StorageService
       final token = StorageService.getToken();
@@ -1098,6 +1104,8 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
       if (token == null || token.isEmpty) {
         throw Exception('Token d\'authentification non disponible');
       }
+
+      debugPrint('Token disponible: ${token.substring(0, 20)}...');
 
       // Créer un client Dio avec le token
       final dio = Dio();
@@ -1113,6 +1121,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
 
       debugPrint('Téléchargement depuis: ${widget.audioUrl}');
       debugPrint('Téléchargement vers: $filePath');
+      debugPrint('Headers: Authorization: Bearer ${token.substring(0, 20)}...');
 
       // Télécharger avec Dio
       final response = await dio.download(
