@@ -90,20 +90,34 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final attendances = attendanceProvider.attendances;
     if (!mounted) return;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userId = authProvider.user?.id;
+    final userEmail = authProvider.user?.email;
 
-    if (userId != null) {
-      try {
-        _currentAttendance = attendances.firstWhere(
+    // Filtrer les pointages actifs (avec check-in mais sans check-out)
+    final activeAttendances = attendances
+        .where(
           (att) =>
-              att.employeeId == userId &&
               att.checkInTime != null &&
               att.checkOutTime == null &&
               !att.isAbsence,
+        )
+        .toList();
+
+    if (activeAttendances.isNotEmpty && userEmail != null) {
+      // Essayer de trouver le pointage de l'utilisateur actuel via l'email
+      try {
+        _currentAttendance = activeAttendances.firstWhere(
+          (att) => att.employee?.email == userEmail,
         );
       } catch (e) {
-        _currentAttendance = null;
+        // Si pas trouvé par email, prendre le dernier pointage actif
+        // (normalement il n'y en a qu'un par utilisateur)
+        _currentAttendance = activeAttendances.first;
       }
+    } else if (activeAttendances.isNotEmpty) {
+      // Si pas d'email disponible, prendre le premier pointage actif
+      _currentAttendance = activeAttendances.first;
+    } else {
+      _currentAttendance = null;
     }
 
     if (mounted) {
@@ -703,7 +717,31 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Future<void> _navigateToCheckOut() async {
-    if (_selectedProject == null || _currentAttendance == null) return;
+    if (_selectedProject == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez sélectionner un projet'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_currentAttendance == null) {
+      // Recharger les pointages et réessayer
+      await _loadCurrentAttendance();
+      if (_currentAttendance == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Aucun check-in trouvé. Veuillez d\'abord faire un check-in.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+    }
 
     final result = await Navigator.of(context).push(
       MaterialPageRoute(

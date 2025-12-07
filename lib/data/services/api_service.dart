@@ -9,7 +9,7 @@ class ApiService {
   ApiService() {
     final token = StorageService.getToken();
     _token = token;
-
+    
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConfig.baseUrl,
@@ -116,8 +116,8 @@ class ApiService {
 
     try {
       final response = await _dio.post(
-        endpoint,
-        data: formData,
+      endpoint,
+      data: formData,
         options: Options(headers: {'Content-Type': 'multipart/form-data'}),
       );
       print('🟢 DEBUG: Response status: ${response.statusCode}');
@@ -130,7 +130,7 @@ class ApiService {
         print('  - Message: ${e.message}');
         print(
           '  - Response: ${e.response?.statusCode} - ${e.response?.statusMessage}',
-        );
+    );
         print('  - Request path: ${e.requestOptions.path}');
         print('  - Request baseUrl: ${e.requestOptions.baseUrl}');
       }

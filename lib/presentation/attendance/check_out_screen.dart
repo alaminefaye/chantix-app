@@ -64,9 +64,7 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
       if (status.isDenied) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Permission de caméra refusée'),
-            ),
+            const SnackBar(content: Text('Permission de caméra refusée')),
           );
         }
         return;
@@ -85,9 +83,7 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors de la prise de photo: $e'),
-          ),
+          SnackBar(content: Text('Erreur lors de la prise de photo: $e')),
         );
       }
     }
@@ -108,9 +104,7 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors de la sélection: $e'),
-          ),
+          SnackBar(content: Text('Erreur lors de la sélection: $e')),
         );
       }
     }
@@ -122,8 +116,10 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
       _errorMessage = null;
     });
 
-    final attendanceProvider =
-        Provider.of<AttendanceProvider>(context, listen: false);
+    final attendanceProvider = Provider.of<AttendanceProvider>(
+      context,
+      listen: false,
+    );
 
     final success = await attendanceProvider.checkOut(
       attendanceId: widget.attendance.id,
@@ -169,8 +165,44 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Vérification de sécurité
+    if (widget.attendance.id == 0) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Check-out')),
+        body: const Center(child: Text('Erreur: Pointage invalide')),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Check-out',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                const Color(0xFFB41839), // Rouge
+                const Color(0xFF3F1B3D), // Violet foncé
+              ],
+            ),
+          ),
+        ),
+      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -182,48 +214,24 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
             ],
           ),
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header avec titre
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    const Expanded(
-                      child: Text(
-                        'Check-out',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(width: 48),
-                  ],
-                ),
-              ),
-              // Zone de contenu blanche
-              Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
-                    ),
+        child: Column(
+          children: [
+            // Zone de contenu blanche
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.only(top: 20),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(30),
+                    topRight: Radius.circular(30),
                   ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                       const SizedBox(height: 12),
 
                       // Informations du check-in
@@ -233,13 +241,18 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
                           color: const Color(0xFFB41839).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: const Color(0xFFB41839).withValues(alpha: 0.3),
+                            color: const Color(
+                              0xFFB41839,
+                            ).withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.login,
-                                color: Color(0xFFB41839), size: 20),
+                            const Icon(
+                              Icons.login,
+                              color: Color(0xFFB41839),
+                              size: 20,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Column(
@@ -253,7 +266,8 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
                                       color: Color(0xFFB41839),
                                     ),
                                   ),
-                                  if (widget.attendance.checkInTime != null) ...[
+                                  if (widget.attendance.checkInTime !=
+                                      null) ...[
                                     const SizedBox(height: 4),
                                     Text(
                                       'Heure: ${_formatTime(widget.attendance.checkInTime)}',
@@ -291,8 +305,11 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
                         child: _position != null
                             ? Row(
                                 children: [
-                                  const Icon(Icons.location_on,
-                                      color: Color(0xFFB41839), size: 20),
+                                  const Icon(
+                                    Icons.location_on,
+                                    color: Color(0xFFB41839),
+                                    size: 20,
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
@@ -408,10 +425,7 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
                           gradient: const LinearGradient(
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
-                            colors: [
-                              Color(0xFFB41839),
-                              Color(0xFF3F1B3D),
-                            ],
+                            colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                           ),
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -431,7 +445,8 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
+                                      Colors.white,
+                                    ),
                                   ),
                                 )
                               : const Text(
@@ -454,16 +469,14 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
                           textAlign: TextAlign.center,
                         ),
                       ],
-                      ],
-                    ),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
-
