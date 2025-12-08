@@ -33,7 +33,7 @@ dependencies:
   # Médias & Fichiers
   image_picker: ^1.0.7
   camera: ^0.10.5+5
-  file_picker: ^6.1.1
+  file_picker: ^8.1.2
   cached_network_image: ^3.3.1
   record: ^6.1.2
   video_player: ^2.8.2
@@ -45,7 +45,7 @@ dependencies:
   permission_handler: ^11.2.0
 
   # Notifications
-  flutter_local_notifications: ^16.3.0
+  flutter_local_notifications: ^17.2.2
   firebase_core: ^3.6.0
   firebase_messaging: ^15.1.3
 

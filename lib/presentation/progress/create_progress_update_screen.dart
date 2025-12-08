@@ -78,7 +78,81 @@ class _CreateProgressUpdateScreenState
         );
       }
     } else {
+      // En mode création, charger le dernier pourcentage d'avancement
+      _loadLastProgress();
       _requestLocationPermission();
+    }
+  }
+
+  /// Charge le dernier pourcentage d'avancement du projet
+  Future<void> _loadLastProgress() async {
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    if (!mounted) return;
+
+    final projectProvider = Provider.of<ProjectProvider>(
+      context,
+      listen: false,
+    );
+
+    try {
+      final project = projectProvider.projects.firstWhere(
+        (p) => p.id == widget.projectId,
+        orElse: () => projectProvider.selectedProject!,
+      );
+
+      // Utiliser le pourcentage actuel du projet
+      if (project.progress > 0) {
+        if (mounted) {
+          setState(() {
+            _progress = project.progress;
+          });
+        }
+        return;
+      }
+
+      // Si le projet n'a pas de pourcentage, chercher dans les mises à jour
+      final progressProvider = Provider.of<ProgressProvider>(
+        context,
+        listen: false,
+      );
+
+      // Charger les mises à jour si elles ne sont pas déjà chargées
+      if (progressProvider.progressUpdates.isEmpty) {
+        await progressProvider.loadProgressUpdates(widget.projectId);
+      }
+
+      if (progressProvider.progressUpdates.isNotEmpty) {
+        // Trier par date de création (plus récent en premier)
+        final sortedUpdates =
+            List<ProgressUpdateModel>.from(progressProvider.progressUpdates)
+              ..sort((a, b) {
+                final dateA = a.createdAt != null
+                    ? DateTime.tryParse(a.createdAt!)
+                    : null;
+                final dateB = b.createdAt != null
+                    ? DateTime.tryParse(b.createdAt!)
+                    : null;
+
+                if (dateA == null && dateB == null) return 0;
+                if (dateA == null) return 1;
+                if (dateB == null) return -1;
+
+                return dateB.compareTo(dateA);
+              });
+
+        // Prendre le pourcentage de la dernière mise à jour
+        if (sortedUpdates.isNotEmpty && sortedUpdates.first.progress > 0) {
+          if (mounted) {
+            setState(() {
+              _progress = sortedUpdates.first.progress;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      // En cas d'erreur, garder 0% par défaut
+      debugPrint('Erreur lors du chargement du dernier pourcentage: $e');
     }
   }
 
@@ -329,8 +403,16 @@ class _CreateProgressUpdateScreenState
       // Essayer directement de démarrer l'enregistrement
       // Si la permission n'est pas accordée, une erreur sera levée
       try {
-        await _audioRecorder.start(const RecordConfig(), path: path);
-        debugPrint('Enregistrement démarré avec succès');
+        // Configurer l'enregistrement en format AAC/M4A pour garantir la compatibilité avec le serveur
+        await _audioRecorder.start(
+          RecordConfig(
+            encoder: AudioEncoder.aacLc, // AAC Low Complexity pour format M4A
+            bitRate: 128000, // 128 kbps
+            sampleRate: 44100, // 44.1 kHz
+          ),
+          path: path,
+        );
+        debugPrint('Enregistrement démarré avec succès en format AAC/M4A');
 
         if (mounted) {
           setState(() {
@@ -489,13 +571,44 @@ class _CreateProgressUpdateScreenState
       _recordingTimer?.cancel();
 
       final path = await _audioRecorder.stop();
-      setState(() {
-        _isRecording = false;
-        if (path != null) {
-          _audioFile = File(path);
+      if (path != null) {
+        // S'assurer que le fichier a l'extension .m4a pour la compatibilité avec le serveur
+        File audioFile = File(path);
+        String finalPath = path;
+
+        // Vérifier et corriger l'extension si nécessaire
+        if (!path.toLowerCase().endsWith('.m4a')) {
+          final directory = await getTemporaryDirectory();
+          final newPath =
+              '${directory.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
+          // Copier le fichier avec la bonne extension
+          audioFile = await audioFile.copy(newPath);
+          finalPath = newPath;
+
+          // Supprimer l'ancien fichier
+          try {
+            await File(path).delete();
+          } catch (e) {
+            debugPrint('Impossible de supprimer l\'ancien fichier: $e');
+          }
         }
-        _recordingDuration = Duration.zero;
-      });
+
+        debugPrint('🎤 Fichier audio enregistré:');
+        debugPrint('  - Chemin original: $path');
+        debugPrint('  - Chemin final: $finalPath');
+        debugPrint('  - Extension: ${finalPath.split('.').last}');
+
+        setState(() {
+          _isRecording = false;
+          _audioFile = File(finalPath);
+          _recordingDuration = Duration.zero;
+        });
+      } else {
+        setState(() {
+          _isRecording = false;
+          _recordingDuration = Duration.zero;
+        });
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -591,15 +704,25 @@ class _CreateProgressUpdateScreenState
       );
       Navigator.of(context).pop();
     } else if (mounted) {
+      final errorMessage =
+          progressProvider.errorMessage ??
+          (widget.update != null
+              ? 'Erreur lors de la modification'
+              : 'Erreur lors de la création');
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            progressProvider.errorMessage ??
-                (widget.update != null
-                    ? 'Erreur lors de la modification'
-                    : 'Erreur lors de la création'),
+            errorMessage,
+            style: const TextStyle(color: Colors.white),
           ),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'OK',
+            textColor: Colors.white,
+            onPressed: () {},
+          ),
         ),
       );
     }

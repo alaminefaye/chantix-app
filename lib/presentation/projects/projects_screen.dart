@@ -71,7 +71,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 );
                 // Recharger les projets après le retour
                 if (mounted) {
-                  Provider.of<ProjectProvider>(context, listen: false).loadProjects();
+                  Provider.of<ProjectProvider>(
+                    context,
+                    listen: false,
+                  ).loadProjects();
                 }
               },
             ),
@@ -80,6 +83,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       ),
       body: Consumer<ProjectProvider>(
         builder: (context, projectProvider, _) {
+          // Debug: Afficher l'état actuel
+          debugPrint(
+            'ProjectsScreen build - isLoading: ${projectProvider.isLoading}, projects count: ${projectProvider.projects.length}, error: ${projectProvider.errorMessage}',
+          );
+
           if (projectProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -106,6 +114,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           }
 
           if (projectProvider.projects.isEmpty) {
+            debugPrint('ProjectsScreen: No projects to display');
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -120,10 +129,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Colors.grey[300]!,
-                            Colors.grey[400]!,
-                          ],
+                          colors: [Colors.grey[300]!, Colors.grey[400]!],
                         ),
                         boxShadow: [
                           BoxShadow(
@@ -156,14 +162,13 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFFB41839),
-                            Color(0xFF3F1B3D),
-                          ],
+                          colors: [Color(0xFFB41839), Color(0xFF3F1B3D)],
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFB41839).withValues(alpha: 0.4),
+                            color: const Color(
+                              0xFFB41839,
+                            ).withValues(alpha: 0.4),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -178,7 +183,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                           );
                           // Recharger les projets après le retour
                           if (mounted) {
-                            Provider.of<ProjectProvider>(context, listen: false).loadProjects();
+                            Provider.of<ProjectProvider>(
+                              context,
+                              listen: false,
+                            ).loadProjects();
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -209,7 +217,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           }
 
           return RefreshIndicator(
-            onRefresh: () => projectProvider.loadProjects(),
+            onRefresh: () => projectProvider.reloadProjects(),
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: projectProvider.projects.length,
@@ -258,10 +266,7 @@ class _ProjectCard3D extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Colors.white,
-              Colors.grey[50]!,
-            ],
+            colors: [Colors.white, Colors.grey[50]!],
           ),
         ),
         child: InkWell(
@@ -299,10 +304,7 @@ class _ProjectCard3D extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     project.description!,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -316,10 +318,7 @@ class _ProjectCard3D extends StatelessWidget {
                         label: 'Budget',
                         value: '${project.budget.toStringAsFixed(0)} FCFA',
                         gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFFF39C12),
-                            Color(0xFFE67E22),
-                          ],
+                          colors: [Color(0xFFF39C12), Color(0xFFE67E22)],
                         ),
                       ),
                     ),
@@ -330,10 +329,7 @@ class _ProjectCard3D extends StatelessWidget {
                         label: 'Avancement',
                         value: '${project.progress}%',
                         gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFF9B59B6),
-                            Color(0xFF8E44AD),
-                          ],
+                          colors: [Color(0xFF9B59B6), Color(0xFF8E44AD)],
                         ),
                       ),
                     ),
@@ -356,32 +352,18 @@ class _ProjectCard3D extends StatelessWidget {
     switch (status) {
       case 'en_cours':
         return const LinearGradient(
-          colors: [
-            Color(0xFF4A90E2),
-            Color(0xFF357ABD),
-          ],
+          colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
         );
       case 'termine':
         return const LinearGradient(
-          colors: [
-            Color(0xFF2ECC71),
-            Color(0xFF27AE60),
-          ],
+          colors: [Color(0xFF2ECC71), Color(0xFF27AE60)],
         );
       case 'bloque':
         return const LinearGradient(
-          colors: [
-            Color(0xFFE74C3C),
-            Color(0xFFC0392B),
-          ],
+          colors: [Color(0xFFE74C3C), Color(0xFFC0392B)],
         );
       default:
-        return LinearGradient(
-          colors: [
-            Colors.grey[400]!,
-            Colors.grey[600]!,
-          ],
-        );
+        return LinearGradient(colors: [Colors.grey[400]!, Colors.grey[600]!]);
     }
   }
 }
@@ -396,7 +378,7 @@ class _StatusBadge3D extends StatelessWidget {
   Widget build(BuildContext context) {
     Color color;
     String label;
-    
+
     switch (status) {
       case 'en_cours':
         color = const Color(0xFF4A90E2);
@@ -421,10 +403,7 @@ class _StatusBadge3D extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            color,
-            color.withValues(alpha: 0.8),
-          ],
+          colors: [color, color.withValues(alpha: 0.8)],
         ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
@@ -529,10 +508,7 @@ class _ProgressBar3D extends StatelessWidget {
   final double value;
   final Gradient gradient;
 
-  const _ProgressBar3D({
-    required this.value,
-    required this.gradient,
-  });
+  const _ProgressBar3D({required this.value, required this.gradient});
 
   @override
   Widget build(BuildContext context) {

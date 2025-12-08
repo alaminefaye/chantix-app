@@ -66,8 +66,27 @@ class ProgressProvider with ChangeNotifier {
         notifyListeners();
         return false;
       }
-    } catch (e) {
-      _errorMessage = e.toString();
+    } catch (e, stackTrace) {
+      debugPrint('Erreur dans createProgressUpdate: $e');
+      debugPrint('Stack trace: $stackTrace');
+
+      // Extraire un message d'erreur plus lisible
+      String errorMsg = 'Erreur lors de la création';
+      if (e.toString().contains('422')) {
+        errorMsg =
+            'Les données fournies sont invalides. Veuillez vérifier les informations saisies.';
+      } else if (e.toString().contains('network') ||
+          e.toString().contains('timeout')) {
+        errorMsg = 'Erreur de connexion. Vérifiez votre connexion internet.';
+      } else {
+        errorMsg = e.toString();
+        // Limiter la longueur du message d'erreur
+        if (errorMsg.length > 200) {
+          errorMsg = '${errorMsg.substring(0, 200)}...';
+        }
+      }
+
+      _errorMessage = errorMsg;
       _isLoading = false;
       notifyListeners();
       return false;
@@ -129,7 +148,10 @@ class ProgressProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final success = await _repository.deleteProgressUpdate(projectId, progressUpdateId);
+      final success = await _repository.deleteProgressUpdate(
+        projectId,
+        progressUpdateId,
+      );
       _isLoading = false;
 
       if (success) {
@@ -149,4 +171,3 @@ class ProgressProvider with ChangeNotifier {
     notifyListeners();
   }
 }
-

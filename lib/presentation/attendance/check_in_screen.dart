@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -227,6 +228,35 @@ class _CheckInScreenState extends State<CheckInScreen> {
     }
   }
 
+  /// Calcule la distance entre deux points GPS en mètres (formule de Haversine)
+  double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    const double earthRadius = 6371000; // Rayon de la Terre en mètres
+
+    final double dLat = _degreesToRadians(lat2 - lat1);
+    final double dLon = _degreesToRadians(lon2 - lon1);
+
+    final double a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_degreesToRadians(lat1)) *
+            math.cos(_degreesToRadians(lat2)) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+
+    final double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    final double distance = earthRadius * c;
+
+    return distance;
+  }
+
+  double _degreesToRadians(double degrees) {
+    return degrees * (math.pi / 180);
+  }
+
   Future<void> _submitCheckIn() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userId = authProvider.user?.id;
@@ -235,6 +265,68 @@ class _CheckInScreenState extends State<CheckInScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Utilisateur non connecté')));
+      return;
+    }
+
+    // Vérifier la position GPS si le projet a des coordonnées
+    if (widget.project.latitude != null &&
+        widget.project.longitude != null &&
+        _position != null) {
+      final projectLat = widget.project.latitude!;
+      final projectLon = widget.project.longitude!;
+      final currentLat = _position!.latitude;
+      final currentLon = _position!.longitude;
+
+      final distance = _calculateDistance(
+        projectLat,
+        projectLon,
+        currentLat,
+        currentLon,
+      );
+
+      const double tolerance = 200; // 200 mètres de tolérance
+
+      if (distance > tolerance) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage =
+              'Vous êtes trop loin de la zone de pointage. Distance: ${distance.toStringAsFixed(0)}m (tolérance: ${tolerance}m)';
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Vous êtes trop loin de la zone de pointage.\nDistance: ${distance.toStringAsFixed(0)}m (tolérance: ${tolerance}m)',
+              ),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
+    } else if (widget.project.latitude != null &&
+        widget.project.longitude != null &&
+        _position == null) {
+      // Le projet a des coordonnées mais la position actuelle n'est pas disponible
+      setState(() {
+        _isLoading = false;
+        _errorMessage =
+            'Impossible d\'obtenir votre position. Veuillez activer la localisation.';
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Impossible d\'obtenir votre position. Veuillez activer la localisation.',
+            ),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
       return;
     }
 
@@ -391,23 +483,89 @@ class _CheckInScreenState extends State<CheckInScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: _position != null
-                  ? Row(
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.location_on,
-                          color: Color(0xFFB41839),
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Lat: ${_position!.latitude.toStringAsFixed(6)}\nLng: ${_position!.longitude.toStringAsFixed(6)}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF212121),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.location_on,
+                              color: Color(0xFFB41839),
+                              size: 20,
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Lat: ${_position!.latitude.toStringAsFixed(6)}\nLng: ${_position!.longitude.toStringAsFixed(6)}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF212121),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                        // Afficher la distance si le projet a des coordonnées
+                        if (widget.project.latitude != null &&
+                            widget.project.longitude != null) ...[
+                          const SizedBox(height: 8),
+                          Builder(
+                            builder: (context) {
+                              final distance = _calculateDistance(
+                                widget.project.latitude!,
+                                widget.project.longitude!,
+                                _position!.latitude,
+                                _position!.longitude,
+                              );
+                              const double tolerance = 200;
+                              final isWithinRange = distance <= tolerance;
+
+                              return Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: isWithinRange
+                                      ? Colors.green[50]
+                                      : Colors.orange[50],
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: isWithinRange
+                                        ? Colors.green[300]!
+                                        : Colors.orange[300]!,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      isWithinRange
+                                          ? Icons.check_circle
+                                          : Icons.warning,
+                                      color: isWithinRange
+                                          ? Colors.green[700]
+                                          : Colors.orange[700],
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        isWithinRange
+                                            ? 'Distance: ${distance.toStringAsFixed(0)}m (dans la zone)'
+                                            : 'Distance: ${distance.toStringAsFixed(0)}m (hors zone - tolérance: ${tolerance}m)',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: isWithinRange
+                                              ? Colors.green[700]
+                                              : Colors.orange[700],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ],
                     )
                   : Row(

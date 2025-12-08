@@ -21,13 +21,27 @@ class ProjectProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _projects = await _repository.getProjects(filters: filters);
-      debugPrint('Projects loaded: ${_projects.length} projects');
+      final projects = await _repository.getProjects(filters: filters);
+      debugPrint('Projects loaded: ${projects.length} projects');
+
+      // Vérifier chaque projet parsé
+      for (var i = 0; i < projects.length; i++) {
+        final project = projects[i];
+        debugPrint(
+          'Project $i: id=${project.id}, name=${project.name}, status=${project.status}',
+        );
+      }
+
+      _projects = projects;
       _isLoading = false;
       _errorMessage = null;
+      debugPrint(
+        'Provider: Notifying listeners with ${_projects.length} projects',
+      );
       notifyListeners();
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('Error loading projects: $e');
+      debugPrint('Stack trace: $stackTrace');
       _errorMessage = e.toString();
       _projects = []; // S'assurer que la liste est vide en cas d'erreur
       _isLoading = false;
@@ -128,5 +142,18 @@ class ProjectProvider with ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
   }
-}
 
+  /// Vider le cache et forcer le rechargement
+  void clearCache() {
+    _projects = [];
+    _selectedProject = null;
+    _errorMessage = null;
+    notifyListeners();
+  }
+
+  /// Recharger les projets en vidant d'abord le cache
+  Future<void> reloadProjects({Map<String, dynamic>? filters}) async {
+    clearCache();
+    await loadProjects(filters: filters);
+  }
+}

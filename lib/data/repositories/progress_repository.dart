@@ -2,15 +2,17 @@ import '../models/progress_update_model.dart';
 import '../services/api_service.dart';
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 class ProgressRepository {
   final ApiService _apiService = ApiService();
 
   Future<List<ProgressUpdateModel>> getProgressUpdates(int projectId) async {
     try {
-      final response = await _apiService.get('/v1/projects/$projectId/progress');
-      
+      final response = await _apiService.get(
+        '/v1/projects/$projectId/progress',
+      );
+
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] ?? response.data;
         return data.map((json) => ProgressUpdateModel.fromJson(json)).toList();
@@ -32,14 +34,33 @@ class ProgressRepository {
     List<File>? videos,
   }) async {
     try {
+      // Validation côté client
+      if (progress < 0 || progress > 100) {
+        return {
+          'success': false,
+          'message': 'Le pourcentage d\'avancement doit être entre 0 et 100.',
+        };
+      }
+
       // Créer FormData pour l'upload de fichiers
-      // S'assurer que progress est un entier
-      final formData = FormData.fromMap({
+      // S'assurer que progress est un entier et que les coordonnées sont numériques
+      final formDataMap = <String, dynamic>{
         'progress': progress, // Envoyer comme entier
-        if (description != null && description.isNotEmpty) 'description': description,
-        if (latitude != null) 'latitude': latitude,
-        if (longitude != null) 'longitude': longitude,
-      });
+      };
+
+      if (description != null && description.trim().isNotEmpty) {
+        formDataMap['description'] = description.trim();
+      }
+
+      if (latitude != null) {
+        formDataMap['latitude'] = latitude; // Garder comme double
+      }
+
+      if (longitude != null) {
+        formDataMap['longitude'] = longitude; // Garder comme double
+      }
+
+      final formData = FormData.fromMap(formDataMap);
 
       // Ajouter les photos
       if (photos != null && photos.isNotEmpty) {
@@ -75,12 +96,66 @@ class ProgressRepository {
       if (audioPath != null) {
         final audioFile = File(audioPath);
         if (await audioFile.exists()) {
+          // Déterminer le type MIME et l'extension basés sur le fichier
+          String filename = audioPath.split('/').last;
+          String extension = filename.contains('.')
+              ? filename.split('.').last.toLowerCase()
+              : '';
+
+          // Si le fichier n'a pas d'extension ou n'a pas une extension audio valide,
+          // ajouter .m4a par défaut (format par défaut du package record)
+          if (extension.isEmpty || !['m4a', 'mp3', 'wav'].contains(extension)) {
+            if (!filename.endsWith('.m4a')) {
+              filename = filename.contains('.')
+                  ? '${filename.substring(0, filename.lastIndexOf('.'))}.m4a'
+                  : '$filename.m4a';
+            }
+            extension = 'm4a';
+          }
+
+          String contentType;
+          switch (extension) {
+            case 'm4a':
+              // Sur Android, essayer audio/x-m4a qui est parfois mieux reconnu
+              // Laravel accepte généralement audio/mp4, audio/x-m4a, ou audio/m4a
+              if (Platform.isAndroid) {
+                // Essayer audio/x-m4a pour Android (parfois mieux reconnu)
+                contentType = 'audio/x-m4a';
+              } else {
+                contentType = 'audio/mp4';
+              }
+              break;
+            case 'mp3':
+              contentType = 'audio/mpeg';
+              break;
+            case 'wav':
+              contentType = 'audio/wav';
+              break;
+            default:
+              // Par défaut, utiliser audio/x-m4a pour Android, audio/mp4 pour iOS
+              if (Platform.isAndroid) {
+                contentType = 'audio/x-m4a';
+              } else {
+                contentType = 'audio/mp4';
+              }
+              filename = filename.endsWith('.m4a')
+                  ? filename
+                  : '${filename.contains('.') ? filename.substring(0, filename.lastIndexOf('.')) : filename}.m4a';
+          }
+
+          debugPrint('📤 Envoi fichier audio:');
+          debugPrint('  - Chemin: $audioPath');
+          debugPrint('  - Nom fichier: $filename');
+          debugPrint('  - Extension: $extension');
+          debugPrint('  - Content-Type: $contentType');
+
           formData.files.add(
             MapEntry(
               'audio_report',
               await MultipartFile.fromFile(
                 audioPath,
-                filename: audioPath.split('/').last,
+                filename: filename,
+                contentType: DioMediaType.parse(contentType),
               ),
             ),
           );
@@ -92,45 +167,101 @@ class ProgressRepository {
         '/v1/projects/$projectId/progress',
         formData,
       );
-      
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data;
         debugPrint('Progress update response: $responseData');
-        
+
         // Extraire les données de la réponse
         final data = responseData['data'] ?? responseData;
         debugPrint('Progress update data to parse: $data');
-        
+
         try {
           final progressUpdate = ProgressUpdateModel.fromJson(
-            data is Map<String, dynamic> ? data : Map<String, dynamic>.from(data),
+            data is Map<String, dynamic>
+                ? data
+                : Map<String, dynamic>.from(data),
           );
-          return {
-            'success': true,
-            'progressUpdate': progressUpdate,
-          };
+          return {'success': true, 'progressUpdate': progressUpdate};
         } catch (parseError, stackTrace) {
-          debugPrint('Erreur lors du parsing du ProgressUpdateModel: $parseError');
+          debugPrint(
+            'Erreur lors du parsing du ProgressUpdateModel: $parseError',
+          );
           debugPrint('Stack trace: $stackTrace');
           debugPrint('Données reçues: $data');
           return {
             'success': false,
-            'message': 'Erreur lors du parsing des données: ${parseError.toString()}',
+            'message':
+                'Erreur lors du parsing des données: ${parseError.toString()}',
           };
         }
       }
-      
+
+      // Gérer les erreurs de validation (422)
+      if (response.statusCode == 422) {
+        final errorData = response.data;
+        debugPrint('❌ Erreur de validation 422: $errorData');
+
+        String errorMessage = 'Les données fournies sont invalides.';
+        if (errorData is Map) {
+          if (errorData.containsKey('message')) {
+            errorMessage = errorData['message'] as String;
+          }
+          if (errorData.containsKey('errors')) {
+            final errors = errorData['errors'];
+            if (errors is Map && errors.isNotEmpty) {
+              // Prendre le premier message d'erreur
+              final firstError = errors.values.first;
+              if (firstError is List && firstError.isNotEmpty) {
+                errorMessage = firstError.first as String;
+              } else if (firstError is String) {
+                errorMessage = firstError;
+              }
+            }
+          }
+        }
+
+        return {'success': false, 'message': errorMessage};
+      }
+
       return {
         'success': false,
         'message': response.data['message'] ?? 'Erreur lors de la création',
       };
     } catch (e, stackTrace) {
-      debugPrint('Erreur lors de la création de la mise à jour: $e');
+      debugPrint('❌ Erreur lors de la création de la mise à jour: $e');
       debugPrint('Stack trace: $stackTrace');
-      return {
-        'success': false,
-        'message': 'Erreur: ${e.toString()}',
-      };
+
+      // Gérer les erreurs DioException
+      if (e is DioException) {
+        if (e.response != null) {
+          final errorData = e.response!.data;
+          debugPrint('Erreur response data: $errorData');
+
+          if (e.response!.statusCode == 422) {
+            String errorMessage = 'Les données fournies sont invalides.';
+            if (errorData is Map) {
+              if (errorData.containsKey('message')) {
+                errorMessage = errorData['message'] as String;
+              }
+              if (errorData.containsKey('errors')) {
+                final errors = errorData['errors'];
+                if (errors is Map && errors.isNotEmpty) {
+                  final firstError = errors.values.first;
+                  if (firstError is List && firstError.isNotEmpty) {
+                    errorMessage = firstError.first as String;
+                  } else if (firstError is String) {
+                    errorMessage = firstError;
+                  }
+                }
+              }
+            }
+            return {'success': false, 'message': errorMessage};
+          }
+        }
+      }
+
+      return {'success': false, 'message': 'Erreur: ${e.toString()}'};
     }
   }
 
@@ -154,7 +285,7 @@ class ProgressRepository {
         '_method': 'PUT', // Méthode spoofing pour Laravel
         'progress': progress, // Laisser comme int
       };
-      
+
       // Ajouter les champs optionnels seulement s'ils ont une valeur
       if (description != null && description.trim().isNotEmpty) {
         formDataMap['description'] = description.trim();
@@ -165,7 +296,7 @@ class ProgressRepository {
       if (longitude != null) {
         formDataMap['longitude'] = longitude;
       }
-      
+
       final formData = FormData.fromMap(formDataMap);
 
       // Ajouter les photos existantes à conserver (format Laravel: existing_photos[])
@@ -216,12 +347,66 @@ class ProgressRepository {
       if (audioPath != null) {
         final audioFile = File(audioPath);
         if (await audioFile.exists()) {
+          // Déterminer le type MIME et l'extension basés sur le fichier
+          String filename = audioPath.split('/').last;
+          String extension = filename.contains('.')
+              ? filename.split('.').last.toLowerCase()
+              : '';
+
+          // Si le fichier n'a pas d'extension ou n'a pas une extension audio valide,
+          // ajouter .m4a par défaut (format par défaut du package record)
+          if (extension.isEmpty || !['m4a', 'mp3', 'wav'].contains(extension)) {
+            if (!filename.endsWith('.m4a')) {
+              filename = filename.contains('.')
+                  ? '${filename.substring(0, filename.lastIndexOf('.'))}.m4a'
+                  : '$filename.m4a';
+            }
+            extension = 'm4a';
+          }
+
+          String contentType;
+          switch (extension) {
+            case 'm4a':
+              // Sur Android, essayer audio/x-m4a qui est parfois mieux reconnu
+              // Laravel accepte généralement audio/mp4, audio/x-m4a, ou audio/m4a
+              if (Platform.isAndroid) {
+                // Essayer audio/x-m4a pour Android (parfois mieux reconnu)
+                contentType = 'audio/x-m4a';
+              } else {
+                contentType = 'audio/mp4';
+              }
+              break;
+            case 'mp3':
+              contentType = 'audio/mpeg';
+              break;
+            case 'wav':
+              contentType = 'audio/wav';
+              break;
+            default:
+              // Par défaut, utiliser audio/x-m4a pour Android, audio/mp4 pour iOS
+              if (Platform.isAndroid) {
+                contentType = 'audio/x-m4a';
+              } else {
+                contentType = 'audio/mp4';
+              }
+              filename = filename.endsWith('.m4a')
+                  ? filename
+                  : '${filename.contains('.') ? filename.substring(0, filename.lastIndexOf('.')) : filename}.m4a';
+          }
+
+          debugPrint('📤 Envoi fichier audio:');
+          debugPrint('  - Chemin: $audioPath');
+          debugPrint('  - Nom fichier: $filename');
+          debugPrint('  - Extension: $extension');
+          debugPrint('  - Content-Type: $contentType');
+
           formData.files.add(
             MapEntry(
               'audio_report',
               await MultipartFile.fromFile(
                 audioPath,
-                filename: audioPath.split('/').last,
+                filename: filename,
+                contentType: DioMediaType.parse(contentType),
               ),
             ),
           );
@@ -244,39 +429,41 @@ class ProgressRepository {
         '/v1/projects/$projectId/progress/$progressUpdateId',
         formData,
       );
-      
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data;
         debugPrint('✅ Progress update response: $responseData');
-        
+
         // Extraire les données de la réponse
         final data = responseData['data'] ?? responseData;
         debugPrint('Progress update data to parse: $data');
-        
+
         try {
           final progressUpdate = ProgressUpdateModel.fromJson(
-            data is Map<String, dynamic> ? data : Map<String, dynamic>.from(data),
+            data is Map<String, dynamic>
+                ? data
+                : Map<String, dynamic>.from(data),
           );
-          return {
-            'success': true,
-            'progressUpdate': progressUpdate,
-          };
+          return {'success': true, 'progressUpdate': progressUpdate};
         } catch (parseError, stackTrace) {
-          debugPrint('Erreur lors du parsing du ProgressUpdateModel: $parseError');
+          debugPrint(
+            'Erreur lors du parsing du ProgressUpdateModel: $parseError',
+          );
           debugPrint('Stack trace: $stackTrace');
           debugPrint('Données reçues: $data');
           return {
             'success': false,
-            'message': 'Erreur lors du parsing des données: ${parseError.toString()}',
+            'message':
+                'Erreur lors du parsing des données: ${parseError.toString()}',
           };
         }
       }
-      
+
       // Gérer les erreurs de validation (422)
       if (response.statusCode == 422) {
         final errorData = response.data;
         debugPrint('❌ Erreur de validation 422: $errorData');
-        
+
         String errorMessage = 'Les données fournies sont invalides.';
         if (errorData is Map) {
           if (errorData.containsKey('message')) {
@@ -295,13 +482,10 @@ class ProgressRepository {
             }
           }
         }
-        
-        return {
-          'success': false,
-          'message': errorMessage,
-        };
+
+        return {'success': false, 'message': errorMessage};
       }
-      
+
       return {
         'success': false,
         'message': response.data['message'] ?? 'Erreur lors de la mise à jour',
@@ -309,13 +493,13 @@ class ProgressRepository {
     } catch (e, stackTrace) {
       debugPrint('❌ Erreur lors de la mise à jour: $e');
       debugPrint('Stack trace: $stackTrace');
-      
+
       // Gérer les erreurs DioException
       if (e is DioException) {
         if (e.response != null) {
           final errorData = e.response!.data;
           debugPrint('Erreur response data: $errorData');
-          
+
           if (e.response!.statusCode == 422) {
             String errorMessage = 'Les données fournies sont invalides.';
             if (errorData is Map) {
@@ -334,18 +518,12 @@ class ProgressRepository {
                 }
               }
             }
-            return {
-              'success': false,
-              'message': errorMessage,
-            };
+            return {'success': false, 'message': errorMessage};
           }
         }
       }
-      
-      return {
-        'success': false,
-        'message': 'Erreur: ${e.toString()}',
-      };
+
+      return {'success': false, 'message': 'Erreur: ${e.toString()}'};
     }
   }
 
@@ -360,4 +538,3 @@ class ProgressRepository {
     }
   }
 }
-

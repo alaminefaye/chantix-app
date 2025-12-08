@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import '../models/attendance_model.dart';
 import '../services/api_service.dart';
 
@@ -43,8 +44,8 @@ class AttendanceRepository {
       });
 
       final endpoint = '/v1/projects/$projectId/attendances/check-in';
-      print('🔵 DEBUG: Check-in URL: $endpoint');
-      print('🔵 DEBUG: Project ID: $projectId');
+      debugPrint('🔵 DEBUG: Check-in URL: $endpoint');
+      debugPrint('🔵 DEBUG: Project ID: $projectId');
 
       final response = await _apiService.postFormData(endpoint, formData);
 
